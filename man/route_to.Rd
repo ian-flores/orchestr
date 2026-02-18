@@ -10,7 +10,7 @@ route_to(node_name)
 \item{node_name}{Character node name to route to.}
 }
 \value{
-A function(state) returning \code{node_name}.
+A function that always returns the given node name.
 }
 \description{
 Returns a condition function that always routes to the given node name.

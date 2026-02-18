@@ -10,8 +10,14 @@ route_tool_calls(state)
 \item{state}{Current graph state.}
 }
 \value{
-\code{"tools"} or \code{"end"}.
+Character string: either a tool node name or \code{END}.
 }
 \description{
 Returns \code{"tools"} if the state has pending tool calls, \code{"end"} otherwise.
+}
+\note{
+These functions are for manual tool dispatch in custom node handlers.
+When using \code{\link[=agent]{Agent}} objects with ellmer, tool calling is handled
+internally by ellmer's Chat class. See \code{\link{react_graph}} for the
+recommended pattern.
 }

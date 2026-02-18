@@ -181,13 +181,16 @@ Self (for chaining)
 \subsection{Method \code{compile()}}{
 Compile the graph into a runnable AgentGraph
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{GraphBuilder$compile(max_iterations = 100L)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{GraphBuilder$compile(max_iterations = 100L, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{max_iterations}}{Integer safety cap on loop iterations}
+
+\item{\code{verbose}}{Logical; if \code{TRUE}, log node execution and routing via
+\code{\link[cli:cli_abort]{cli::cli_inform()}}.}
 }
 \if{html}{\out{</div>}}
 }

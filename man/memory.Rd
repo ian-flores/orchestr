@@ -17,6 +17,10 @@ A \code{Memory} R6 object.
 \description{
 Create a key-value memory store
 }
+\note{
+The \code{path} parameter for file backends should be a trusted value.
+Do not derive it from LLM output or untrusted user input.
+}
 \examples{
 mem <- memory()
 mem$set("foo", 42)

@@ -10,21 +10,28 @@ StateSchema <- R6::R6Class(
 
   public = list(
 
+    #' @field max_append Maximum number of items to keep for append reducers.
+    max_append = Inf,
+
     #' @description Create a new StateSchema
     #' @param ... Named type specifications. Each value is a string like
     #'   `"append:list"`, `"any"`, `"logical"`, `"numeric"`, `"character"`,
     #'   `"list"`, `"data.frame"`, or `"integer"`.
     #'   The `"append:list"` form uses an append reducer for lists.
-    initialize = function(...) {
+    #' @param .max_append Maximum number of items to retain for append
+    #'   reducers. Defaults to `Inf` (no limit). When the limit is exceeded,
+    #'   the most recent items are kept.
+    initialize = function(..., .max_append = Inf) {
       specs <- list(...)
       if (length(specs) == 0L) {
-        rlang::abort("StateSchema requires at least one field specification.")
+        rlang::abort("StateSchema requires at least one field specification.", call = NULL)
       }
       if (!rlang::is_named(specs)) {
-        rlang::abort("All StateSchema fields must be named.")
+        rlang::abort("All StateSchema fields must be named.", call = NULL)
       }
       parsed <- lapply(specs, private$parse_spec)
       private$fields <- parsed
+      self$max_append <- .max_append
     },
 
     #' @description Validate a set of updates against the schema
@@ -39,7 +46,7 @@ StateSchema <- R6::R6Class(
       if (length(unknown) > 0L) {
         rlang::abort(paste0(
           "Unknown state fields: ", paste(unknown, collapse = ", ")
-        ))
+        ), call = NULL)
       }
       for (nm in names(updates)) {
         spec <- private$fields[[nm]]
@@ -49,7 +56,7 @@ StateSchema <- R6::R6Class(
             rlang::abort(paste0(
               "Field '", nm, "' expects type '", spec$type,
               "', got '", class(val)[[1L]], "'."
-            ))
+            ), call = NULL)
           }
         }
       }
@@ -67,7 +74,14 @@ StateSchema <- R6::R6Class(
         spec <- private$fields[[nm]]
         if (spec$reducer == "append") {
           existing <- result[[nm]] %||% list()
-          result[[nm]] <- c(existing, updates[[nm]])
+          combined <- c(existing, updates[[nm]])
+          if (length(combined) > self$max_append) {
+            combined <- combined[seq(
+              max(1L, length(combined) - self$max_append + 1L),
+              length(combined)
+            )]
+          }
+          result[[nm]] <- combined
         } else {
           result[[nm]] <- updates[[nm]]
         }
@@ -87,7 +101,7 @@ StateSchema <- R6::R6Class(
 
     parse_spec = function(spec) {
       if (!is.character(spec) || length(spec) != 1L) {
-        rlang::abort("Each field spec must be a single string.")
+        rlang::abort("Each field spec must be a single string.", call = NULL)
       }
       if (grepl("^append:", spec)) {
         type_part <- sub("^append:", "", spec)
@@ -121,14 +135,17 @@ StateSchema <- R6::R6Class(
 #'
 #' @param ... Named field specifications (e.g., `messages = "append:list"`,
 #'   `done = "logical"`).
-#' @return A `StateSchema` R6 object.
+#' @param .max_append Maximum number of items to retain for append reducers.
+#'   Defaults to `Inf` (no limit). When the limit is exceeded, only the most
+#'   recent items are kept.
+#' @return A \code{StateSchema} R6 object.
 #' @export
 #' @examples
 #' schema <- state_schema(messages = "append:list", done = "logical")
 #' schema$validate(list(done = TRUE))
 #' schema$merge(list(messages = list("a")), list(messages = list("b")))
-state_schema <- function(...) {
-  StateSchema$new(...)
+state_schema <- function(..., .max_append = Inf) {
+  StateSchema$new(..., .max_append = .max_append)
 }
 
 
@@ -141,17 +158,17 @@ state_schema <- function(...) {
 #' @param state Named list of current state
 #' @param node Character string naming the node
 #' @param step Integer step number
-#' @return An object of class `"state_snapshot"`
+#' @return A \code{state_snapshot} S3 object.
 #' @export
 new_state_snapshot <- function(state, node, step) {
   if (!is.list(state)) {
-    rlang::abort("`state` must be a list.")
+    rlang::abort("`state` must be a list.", call = NULL)
   }
   if (!is.character(node) || length(node) != 1L) {
-    rlang::abort("`node` must be a single character string.")
+    rlang::abort("`node` must be a single character string.", call = NULL)
   }
   if (!is.numeric(step) || length(step) != 1L) {
-    rlang::abort("`step` must be a single number.")
+    rlang::abort("`step` must be a single number.", call = NULL)
   }
   structure(
     list(state = state, node = node, step = as.integer(step)),

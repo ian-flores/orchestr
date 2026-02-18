@@ -6,6 +6,7 @@
 #' @importFrom cli cli_h3 cli_ul cli_li cli_end
 #' @importFrom R6 R6Class
 #' @importFrom jsonlite toJSON fromJSON read_json write_json
+#' @importFrom methods is
 NULL
 
 #' End sentinel for graph execution

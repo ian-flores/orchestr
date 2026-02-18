@@ -19,7 +19,7 @@ Memory <- R6::R6Class(
 
       if (backend == "file") {
         if (is.null(path)) {
-          rlang::abort("File backend requires a `path` argument.")
+          rlang::abort("File backend requires a `path` argument.", call = NULL)
         }
         private$path <- path
         if (file.exists(path)) {
@@ -102,7 +102,7 @@ Memory <- R6::R6Class(
 
     check_key = function(key) {
       if (!is.character(key) || length(key) != 1L || nchar(key) == 0L) {
-        rlang::abort("`key` must be a non-empty single character string.")
+        rlang::abort("`key` must be a non-empty single character string.", call = NULL)
       }
     },
 
@@ -123,7 +123,9 @@ Memory <- R6::R6Class(
 #'
 #' @param backend Either `"local"` (in-process list) or `"file"` (JSON file).
 #' @param path File path for the file backend.
-#' @return A `Memory` R6 object.
+#' @note The \code{path} parameter for file backends should be a trusted value.
+#'   Do not derive it from LLM output or untrusted user input.
+#' @return A \code{Memory} R6 object.
 #' @export
 #' @examples
 #' mem <- memory()

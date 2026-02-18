@@ -11,7 +11,7 @@ pipeline_graph(...)
 are auto-generated as \code{"step_1"}, \code{"step_2"}, etc.}
 }
 \value{
-An \code{AgentGraph} object.
+A compiled \code{AgentGraph} object.
 }
 \description{
 Chains agents in order: agent1 -> agent2 -> ... -> END.

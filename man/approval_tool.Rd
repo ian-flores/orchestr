@@ -12,7 +12,7 @@ returns a character string to display as the approval prompt. Defaults
 to \code{"Approve this action? (yes/no): "}.}
 }
 \value{
-An ellmer tool definition.
+An ellmer tool definition for human-in-the-loop approval.
 }
 \description{
 Returns an \code{\link[ellmer:tool]{ellmer::tool()}} definition that prompts a human for approval

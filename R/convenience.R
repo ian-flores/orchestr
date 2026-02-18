@@ -1,34 +1,26 @@
 #' Create a ReAct (Reasoning + Acting) agent graph
 #'
-#' Builds a graph with an agent node that calls the agent, a tools node that
-#' processes tool calls, and conditional routing between them.
+#' Builds a single-agent graph with state management and checkpointing.
+#' Tool calling is handled internally by ellmer's `Chat` class during
+#' `$chat()`, so no separate tool dispatch node is needed.
 #'
 #' @param agent An `Agent` object.
-#' @param tools Named list of tool functions.
+#' @param tools Named list of tool definitions to register on the agent. These
+#'   are registered via `agent$register_tools()` before graph compilation.
 #' @param max_iterations Integer safety cap.
-#' @return An `AgentGraph` object.
+#' @return A compiled \code{AgentGraph} object.
 #' @export
 react_graph <- function(agent, tools = list(), max_iterations = 10L) {
   if (!inherits(agent, "Agent")) {
-    rlang::abort("`agent` must be an Agent object.")
+    rlang::abort("`agent` must be an Agent object.", call = NULL)
   }
+  # Register any additional tools on the agent
+  if (length(tools) > 0L) agent$register_tools(tools)
+
   schema <- state_schema(messages = "append:list")
   gb <- graph_builder(state_schema = schema)
   gb$add_node("agent", as_node(agent))
-  if (length(tools) > 0L) {
-    gb$add_node("tools", tool_node(tools))
-  } else {
-    # No-op tools node
-    gb$add_node("tools", function(state, config) {
-      list(pending_tool_calls = list())
-    })
-  }
-  gb$add_conditional_edge(
-    "agent",
-    route_tool_calls,
-    list(tools = "tools", end = END)
-  )
-  gb$add_edge("tools", "agent")
+  gb$add_edge("agent", END)
   gb$set_entry_point("agent")
   gb$compile(max_iterations = max_iterations)
 }
@@ -39,16 +31,16 @@ react_graph <- function(agent, tools = list(), max_iterations = 10L) {
 #'
 #' @param ... `Agent` objects, in execution order. If unnamed, node names
 #'   are auto-generated as `"step_1"`, `"step_2"`, etc.
-#' @return An `AgentGraph` object.
+#' @return A compiled \code{AgentGraph} object.
 #' @export
 pipeline_graph <- function(...) {
   agents <- list(...)
   if (length(agents) == 0L) {
-    rlang::abort("At least one agent is required.")
+    rlang::abort("At least one agent is required.", call = NULL)
   }
   for (a in agents) {
     if (!inherits(a, "Agent")) {
-      rlang::abort("All arguments must be Agent objects.")
+      rlang::abort("All arguments must be Agent objects.", call = NULL)
     }
   }
 
@@ -87,18 +79,18 @@ pipeline_graph <- function(...) {
 #'   suffix and a `route` tool are automatically injected.
 #' @param workers Named list of `Agent` objects.
 #' @param max_iterations Integer safety cap (default 50).
-#' @return An `AgentGraph` object.
+#' @return A compiled \code{AgentGraph} object.
 #' @export
 supervisor_graph <- function(supervisor, workers, max_iterations = 50L) {
   if (!inherits(supervisor, "Agent")) {
-    rlang::abort("`supervisor` must be an Agent object.")
+    rlang::abort("`supervisor` must be an Agent object.", call = NULL)
   }
   if (!is.list(workers) || !rlang::is_named(workers)) {
-    rlang::abort("`workers` must be a named list of Agent objects.")
+    rlang::abort("`workers` must be a named list of Agent objects.", call = NULL)
   }
   for (w in workers) {
     if (!inherits(w, "Agent")) {
-      rlang::abort("All workers must be Agent objects.")
+      rlang::abort("All workers must be Agent objects.", call = NULL)
     }
   }
 
@@ -118,34 +110,38 @@ supervisor_graph <- function(supervisor, workers, max_iterations = 50L) {
   )
   chat$set_system_prompt(routing_sp)
 
-  # Build the supervisor node: invokes agent, then reads the route from state
-  sup_node <- function(state, config) {
-    # Reset next_worker each supervisor turn
-    route_result <- list(next_worker = NULL)
-    # Create a one-shot route tool that captures the decision
-    route_tool <- ellmer::tool(
-      fun = function(worker) {
-        if (!worker %in% valid_targets) {
-          return(paste0(
-            "Invalid worker. Choose one of: ",
-            paste(valid_targets, collapse = ", ")
-          ))
-        }
-        route_result$next_worker <<- worker
-        paste0("Routing to: ", worker)
-      },
-      description = paste0(
-        "Route to a worker or finish. Valid targets: ",
-        paste(valid_targets, collapse = ", ")
-      ),
-      arguments = list(
-        worker = ellmer::type_string(paste0(
-          "Worker name or FINISH. Options: ",
+  # Shared environment for capturing route decisions across invocations
+  route_result <- new.env(parent = emptyenv())
+  route_result$next_worker <- NULL
+
+  # Register route tool ONCE during graph construction
+  route_tool <- ellmer::tool(
+    fun = function(worker) {
+      if (!worker %in% valid_targets) {
+        return(paste0(
+          "Invalid worker. Choose one of: ",
           paste(valid_targets, collapse = ", ")
         ))
-      )
+      }
+      route_result$next_worker <- worker
+      paste0("Routing to: ", worker)
+    },
+    description = paste0(
+      "Route to a worker or finish. Valid targets: ",
+      paste(valid_targets, collapse = ", ")
+    ),
+    arguments = list(
+      worker = ellmer::type_string(paste0(
+        "Worker name or FINISH. Options: ",
+        paste(valid_targets, collapse = ", ")
+      ))
     )
-    chat$register_tool(route_tool)
+  )
+  chat$register_tool(route_tool)
+
+  # Build the supervisor node handler (does NOT re-register the tool)
+  sup_node <- function(state, config) {
+    route_result$next_worker <- NULL
     msgs <- state$messages
     prompt <- if (length(msgs) > 0L) as.character(msgs[[length(msgs)]]) else ""
     response <- chat$chat(prompt)

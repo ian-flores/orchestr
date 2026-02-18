@@ -3,11 +3,11 @@
 #' @param agent An `Agent` object.
 #' @param input_key State key containing the input prompt (default `"messages"`).
 #' @param output_key State key for the response (default `"messages"`).
-#' @return A function(state, config) suitable for `GraphBuilder$add_node()`.
+#' @return A function suitable for use as a graph node handler.
 #' @export
 as_node <- function(agent, input_key = "messages", output_key = "messages") {
   if (!inherits(agent, "Agent")) {
-    rlang::abort("`agent` must be an Agent object.")
+    rlang::abort("`agent` must be an Agent object.", call = NULL)
   }
   function(state, config) {
     msgs <- state[[input_key]]
@@ -30,11 +30,15 @@ as_node <- function(agent, input_key = "messages", output_key = "messages") {
 #' Returns a handler function that processes pending tool calls in the state.
 #'
 #' @param tools Named list of tool functions keyed by tool name.
-#' @return A function(state, config) for use with `GraphBuilder$add_node()`.
+#' @return A function suitable for use as a graph node handler.
+#' @note These functions are for manual tool dispatch in custom node handlers.
+#' When using \code{\link[=agent]{Agent}} objects with ellmer, tool calling is handled
+#' internally by ellmer's Chat class. See \code{\link{react_graph}} for the
+#' recommended pattern.
 #' @export
 tool_node <- function(tools) {
   if (!is.list(tools) || !rlang::is_named(tools)) {
-    rlang::abort("`tools` must be a named list of functions.")
+    rlang::abort("`tools` must be a named list of functions.", call = NULL)
   }
   function(state, config) {
     tool_results <- list()
@@ -57,7 +61,11 @@ tool_node <- function(tools) {
 #' Returns `"tools"` if the state has pending tool calls, `"end"` otherwise.
 #'
 #' @param state Current graph state.
-#' @return `"tools"` or `"end"`.
+#' @return Character string: either a tool node name or \code{END}.
+#' @note These functions are for manual tool dispatch in custom node handlers.
+#' When using \code{\link[=agent]{Agent}} objects with ellmer, tool calling is handled
+#' internally by ellmer's Chat class. See \code{\link{react_graph}} for the
+#' recommended pattern.
 #' @export
 route_tool_calls <- function(state) {
   if (length(state$pending_tool_calls %||% list()) > 0L) "tools" else "end"
@@ -68,11 +76,11 @@ route_tool_calls <- function(state) {
 #' Returns a condition function that always routes to the given node name.
 #'
 #' @param node_name Character node name to route to.
-#' @return A function(state) returning `node_name`.
+#' @return A function that always returns the given node name.
 #' @export
 route_to <- function(node_name) {
   if (!is.character(node_name) || length(node_name) != 1L) {
-    rlang::abort("`node_name` must be a single character string.")
+    rlang::abort("`node_name` must be a single character string.", call = NULL)
   }
   function(state) node_name
 }

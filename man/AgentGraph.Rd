@@ -43,7 +43,8 @@ create via \code{GraphBuilder$compile()}.
   interrupt_before,
   interrupt_after,
   checkpointer,
-  max_iterations
+  max_iterations,
+  verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -67,6 +68,9 @@ create via \code{GraphBuilder$compile()}.
 \item{\code{checkpointer}}{Optional Checkpointer}
 
 \item{\code{max_iterations}}{Integer safety cap}
+
+\item{\code{verbose}}{Logical; if \code{TRUE}, log node entry/exit with timing,
+routing decisions, and iteration count via \code{\link[cli:cli_abort]{cli::cli_inform()}}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -77,7 +81,7 @@ create via \code{GraphBuilder$compile()}.
 \subsection{Method \code{invoke()}}{
 Run the graph to completion
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{AgentGraph$invoke(state = list(), config = list())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{AgentGraph$invoke(state = list(), config = list(), verbose = private$.verbose)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -86,6 +90,9 @@ Run the graph to completion
 \item{\code{state}}{Named list of initial state}
 
 \item{\code{config}}{Named list of configuration (e.g., thread_id, resume_from)}
+
+\item{\code{verbose}}{Logical; if \code{TRUE}, log execution details. Overrides the
+graph-level default set at compile time.}
 }
 \if{html}{\out{</div>}}
 }
@@ -99,7 +106,12 @@ Final state as a named list
 \subsection{Method \code{stream()}}{
 Run the graph and collect state snapshots
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{AgentGraph$stream(state = list(), config = list())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{AgentGraph$stream(
+  state = list(),
+  config = list(),
+  on_step = NULL,
+  verbose = private$.verbose
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -108,6 +120,12 @@ Run the graph and collect state snapshots
 \item{\code{state}}{Named list of initial state}
 
 \item{\code{config}}{Named list of configuration}
+
+\item{\code{on_step}}{Optional callback function called after each node with the
+snapshot as its sole argument. Useful for real-time progress reporting.}
+
+\item{\code{verbose}}{Logical; if \code{TRUE}, log execution details. Overrides the
+graph-level default set at compile time.}
 }
 \if{html}{\out{</div>}}
 }

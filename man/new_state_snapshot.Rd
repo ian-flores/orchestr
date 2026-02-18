@@ -14,7 +14,7 @@ new_state_snapshot(state, node, step)
 \item{step}{Integer step number}
 }
 \value{
-An object of class \code{"state_snapshot"}
+A \code{state_snapshot} S3 object.
 }
 \description{
 Records the state at a particular node and step in graph execution.

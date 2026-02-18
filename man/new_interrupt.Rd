@@ -14,7 +14,7 @@ new_interrupt(state, node, step)
 \item{step}{Integer. The execution step number.}
 }
 \value{
-A condition object of class \code{agentgraph_interrupt}.
+An \code{agentgraph_interrupt} condition object.
 }
 \description{
 Creates a condition of class \code{agentgraph_interrupt} that can be signalled

@@ -9,14 +9,16 @@ react_graph(agent, tools = list(), max_iterations = 10L)
 \arguments{
 \item{agent}{An \code{Agent} object.}
 
-\item{tools}{Named list of tool functions.}
+\item{tools}{Named list of tool definitions to register on the agent. These
+are registered via \code{agent$register_tools()} before graph compilation.}
 
 \item{max_iterations}{Integer safety cap.}
 }
 \value{
-An \code{AgentGraph} object.
+A compiled \code{AgentGraph} object.
 }
 \description{
-Builds a graph with an agent node that calls the agent, a tools node that
-processes tool calls, and conditional routing between them.
+Builds a single-agent graph with state management and checkpointing.
+Tool calling is handled internally by ellmer's \code{Chat} class during
+\verb{$chat()}, so no separate tool dispatch node is needed.
 }

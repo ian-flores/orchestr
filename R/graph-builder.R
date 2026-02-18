@@ -14,7 +14,7 @@ GraphBuilder <- R6::R6Class(
     #' @param state_schema Optional `StateSchema` for typed state with reducers.
     initialize = function(state_schema = NULL) {
       if (!is.null(state_schema) && !inherits(state_schema, "StateSchema")) {
-        rlang::abort("`state_schema` must be a StateSchema object or NULL.")
+        rlang::abort("`state_schema` must be a StateSchema object or NULL.", call = NULL)
       }
       private$schema <- state_schema
       private$nodes <- list()
@@ -33,13 +33,13 @@ GraphBuilder <- R6::R6Class(
     add_node = function(name, handler) {
       private$check_name(name)
       if (name == END) {
-        rlang::abort("Cannot use reserved name '__end__' as a node name.")
+        rlang::abort("Cannot use reserved name '__end__' as a node name.", call = NULL)
       }
       if (name %in% names(private$nodes)) {
-        rlang::abort(paste0("Node '", name, "' already exists."))
+        rlang::abort(paste0("Node '", name, "' already exists."), call = NULL)
       }
       if (!is.function(handler) && !inherits(handler, "Agent")) {
-        rlang::abort("`handler` must be a function or an Agent object.")
+        rlang::abort("`handler` must be a function or an Agent object.", call = NULL)
       }
       private$nodes[[name]] <- handler
       invisible(self)
@@ -52,7 +52,7 @@ GraphBuilder <- R6::R6Class(
     add_edge = function(from, to) {
       private$check_name(from)
       if (!is.character(to) || length(to) != 1L) {
-        rlang::abort("`to` must be a single character string.")
+        rlang::abort("`to` must be a single character string.", call = NULL)
       }
       private$edges <- c(private$edges, list(list(from = from, to = to)))
       invisible(self)
@@ -66,10 +66,10 @@ GraphBuilder <- R6::R6Class(
     add_conditional_edge = function(from, condition, mapping) {
       private$check_name(from)
       if (!is.function(condition)) {
-        rlang::abort("`condition` must be a function.")
+        rlang::abort("`condition` must be a function.", call = NULL)
       }
       if (!is.list(mapping) || !rlang::is_named(mapping)) {
-        rlang::abort("`mapping` must be a named list.")
+        rlang::abort("`mapping` must be a named list.", call = NULL)
       }
       private$conditional_edges <- c(
         private$conditional_edges,
@@ -106,7 +106,7 @@ GraphBuilder <- R6::R6Class(
     #' @return Self (for chaining)
     set_checkpointer = function(checkpointer) {
       if (!inherits(checkpointer, "Checkpointer")) {
-        rlang::abort("`checkpointer` must be a Checkpointer object.")
+        rlang::abort("`checkpointer` must be a Checkpointer object.", call = NULL)
       }
       private$cp <- checkpointer
       invisible(self)
@@ -114,16 +114,18 @@ GraphBuilder <- R6::R6Class(
 
     #' @description Compile the graph into a runnable AgentGraph
     #' @param max_iterations Integer safety cap on loop iterations
+    #' @param verbose Logical; if `TRUE`, log node execution and routing via
+    #'   [cli::cli_inform()].
     #' @return An `AgentGraph` object
-    compile = function(max_iterations = 100L) {
+    compile = function(max_iterations = 100L, verbose = FALSE) {
       # Validate entry point
       if (is.null(private$entry)) {
-        rlang::abort("Entry point must be set before compiling.")
+        rlang::abort("Entry point must be set before compiling.", call = NULL)
       }
       if (!private$entry %in% names(private$nodes)) {
         rlang::abort(paste0(
           "Entry point '", private$entry, "' is not a registered node."
-        ))
+        ), call = NULL)
       }
 
       # Validate edge targets
@@ -132,10 +134,10 @@ GraphBuilder <- R6::R6Class(
 
       for (e in private$edges) {
         if (!e$from %in% all_node_names) {
-          rlang::abort(paste0("Edge source '", e$from, "' is not a registered node."))
+          rlang::abort(paste0("Edge source '", e$from, "' is not a registered node."), call = NULL)
         }
         if (!e$to %in% valid_targets) {
-          rlang::abort(paste0("Edge target '", e$to, "' is not a registered node or END."))
+          rlang::abort(paste0("Edge target '", e$to, "' is not a registered node or END."), call = NULL)
         }
       }
 
@@ -143,13 +145,13 @@ GraphBuilder <- R6::R6Class(
         if (!ce$from %in% all_node_names) {
           rlang::abort(paste0(
             "Conditional edge source '", ce$from, "' is not a registered node."
-          ))
+          ), call = NULL)
         }
         for (target in ce$mapping) {
           if (!target %in% valid_targets) {
             rlang::abort(paste0(
               "Conditional edge target '", target, "' is not a registered node or END."
-            ))
+            ), call = NULL)
           }
         }
       }
@@ -173,7 +175,8 @@ GraphBuilder <- R6::R6Class(
         interrupt_before = private$interrupt_before,
         interrupt_after = private$interrupt_after,
         checkpointer = private$cp,
-        max_iterations = as.integer(max_iterations)
+        max_iterations = as.integer(max_iterations),
+        verbose = verbose
       )
     },
 
@@ -201,7 +204,7 @@ GraphBuilder <- R6::R6Class(
 
     check_name = function(name) {
       if (!is.character(name) || length(name) != 1L || !nzchar(name)) {
-        rlang::abort("Node name must be a non-empty single character string.")
+        rlang::abort("Node name must be a non-empty single character string.", call = NULL)
       }
     },
 

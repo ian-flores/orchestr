@@ -11,7 +11,7 @@ as_mermaid(graph)
 methods.}
 }
 \value{
-A character scalar containing the Mermaid diagram source.
+A character string containing a Mermaid diagram definition.
 }
 \description{
 Generates a \href{https://mermaid.js.org/}{Mermaid} flowchart string from an

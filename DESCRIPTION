@@ -20,6 +20,7 @@ Imports:
     cli,
     ellmer (>= 0.4.0),
     jsonlite,
+    methods,
     R6,
     rlang (>= 1.1.0)
 Suggests:

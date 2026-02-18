@@ -13,6 +13,13 @@ Defines typed fields with optional reducers for graph state management.
 Use the \code{\link[=state_schema]{state_schema()}} constructor function.
 }
 \keyword{internal}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{max_append}}{Maximum number of items to keep for append reducers.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -29,7 +36,7 @@ Use the \code{\link[=state_schema]{state_schema()}} constructor function.
 \subsection{Method \code{new()}}{
 Create a new StateSchema
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{StateSchema$new(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{StateSchema$new(..., .max_append = Inf)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -39,6 +46,10 @@ Create a new StateSchema
 \code{"append:list"}, \code{"any"}, \code{"logical"}, \code{"numeric"}, \code{"character"},
 \code{"list"}, \code{"data.frame"}, or \code{"integer"}.
 The \code{"append:list"} form uses an append reducer for lists.}
+
+\item{\code{.max_append}}{Maximum number of items to retain for append
+reducers. Defaults to \code{Inf} (no limit). When the limit is exceeded,
+the most recent items are kept.}
 }
 \if{html}{\out{</div>}}
 }

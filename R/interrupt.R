@@ -6,7 +6,7 @@
 #' @param state The current graph state at the point of interruption.
 #' @param node Character scalar. The node that triggered the interrupt.
 #' @param step Integer. The execution step number.
-#' @return A condition object of class `agentgraph_interrupt`.
+#' @return An \code{agentgraph_interrupt} condition object.
 #' @export
 new_interrupt <- function(state, node, step) {
   cnd(
@@ -27,7 +27,7 @@ new_interrupt <- function(state, node, step) {
 #' @param prompt_fn Optional function that receives the tool arguments and
 #'   returns a character string to display as the approval prompt. Defaults
 #'   to `"Approve this action? (yes/no): "`.
-#' @return An ellmer tool definition.
+#' @return An ellmer tool definition for human-in-the-loop approval.
 #' @export
 approval_tool <- function(prompt_fn = NULL) {
   prompt_fn <- prompt_fn %||% function(...) "Approve this action? (yes/no): "

@@ -3,6 +3,9 @@
 #' Persists graph execution state for workflow resumption.
 #' Use the [checkpointer()] constructor function.
 #'
+#' @note The file backend uses non-atomic read-modify-write operations and is
+#'   not safe for concurrent multi-process access. Use the memory backend for
+#'   concurrent use within a single R process.
 #' @keywords internal
 Checkpointer <- R6::R6Class(
 
@@ -20,7 +23,7 @@ Checkpointer <- R6::R6Class(
 
       if (backend == "file") {
         if (is.null(path)) {
-          rlang::abort("File backend requires a `path` argument.")
+          rlang::abort("File backend requires a `path` argument.", call = NULL)
         }
         private$path <- path
         if (!dir.exists(path)) {
@@ -39,10 +42,10 @@ Checkpointer <- R6::R6Class(
     save = function(thread_id, node_name, state) {
       private$check_thread_id(thread_id)
       if (!is.character(node_name) || length(node_name) != 1L) {
-        rlang::abort("`node_name` must be a single character string.")
+        rlang::abort("`node_name` must be a single character string.", call = NULL)
       }
       if (!is.list(state)) {
-        rlang::abort("`state` must be a list.")
+        rlang::abort("`state` must be a list.", call = NULL)
       }
 
       entry <- list(
@@ -97,7 +100,10 @@ Checkpointer <- R6::R6Class(
     check_thread_id = function(thread_id) {
       if (!is.character(thread_id) || length(thread_id) != 1L ||
           nchar(thread_id) == 0L) {
-        rlang::abort("`thread_id` must be a non-empty single character string.")
+        rlang::abort("`thread_id` must be a non-empty single character string.", call = NULL)
+      }
+      if (nchar(thread_id) > 200L) {
+        rlang::abort("`thread_id` must be 200 characters or fewer.", call = NULL)
       }
     },
 
@@ -141,7 +147,7 @@ Checkpointer <- R6::R6Class(
 #' @param backend Either `"memory"` (in-process) or `"file"` (directory of JSON
 #'   files).
 #' @param path Directory path for the file backend.
-#' @return A `Checkpointer` R6 object.
+#' @return A \code{Checkpointer} R6 object.
 #' @export
 #' @examples
 #' cp <- checkpointer()

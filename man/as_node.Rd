@@ -14,7 +14,7 @@ as_node(agent, input_key = "messages", output_key = "messages")
 \item{output_key}{State key for the response (default \code{"messages"}).}
 }
 \value{
-A function(state, config) suitable for \code{GraphBuilder$add_node()}.
+A function suitable for use as a graph node handler.
 }
 \description{
 Convert an Agent to a graph node handler function

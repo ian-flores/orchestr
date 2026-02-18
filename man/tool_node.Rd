@@ -10,8 +10,14 @@ tool_node(tools)
 \item{tools}{Named list of tool functions keyed by tool name.}
 }
 \value{
-A function(state, config) for use with \code{GraphBuilder$add_node()}.
+A function suitable for use as a graph node handler.
 }
 \description{
 Returns a handler function that processes pending tool calls in the state.
+}
+\note{
+These functions are for manual tool dispatch in custom node handlers.
+When using \code{\link[=agent]{Agent}} objects with ellmer, tool calling is handled
+internally by ellmer's Chat class. See \code{\link{react_graph}} for the
+recommended pattern.
 }

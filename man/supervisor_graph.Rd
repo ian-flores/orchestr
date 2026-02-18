@@ -15,7 +15,7 @@ suffix and a \code{route} tool are automatically injected.}
 \item{max_iterations}{Integer safety cap (default 50).}
 }
 \value{
-An \code{AgentGraph} object.
+A compiled \code{AgentGraph} object.
 }
 \description{
 The supervisor agent decides which worker to invoke based on its response.

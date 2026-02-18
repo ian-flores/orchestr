@@ -21,9 +21,11 @@ AgentGraph <- R6::R6Class(
     #' @param interrupt_after Character vector of node names
     #' @param checkpointer Optional Checkpointer
     #' @param max_iterations Integer safety cap
+    #' @param verbose Logical; if `TRUE`, log node entry/exit with timing,
+    #'   routing decisions, and iteration count via [cli::cli_inform()].
     initialize = function(nodes, edges, conditional_edges, entry, schema,
                           interrupt_before, interrupt_after, checkpointer,
-                          max_iterations) {
+                          max_iterations, verbose = FALSE) {
       private$nodes <- nodes
       private$edges <- edges
       private$conditional_edges <- conditional_edges
@@ -33,6 +35,7 @@ AgentGraph <- R6::R6Class(
       private$interrupt_after <- interrupt_after
       private$checkpointer <- checkpointer
       private$max_iterations <- max_iterations
+      private$.verbose <- verbose
 
       # Pre-compute edge lookup for fast resolution
       private$edge_map <- list()
@@ -48,8 +51,10 @@ AgentGraph <- R6::R6Class(
     #' @description Run the graph to completion
     #' @param state Named list of initial state
     #' @param config Named list of configuration (e.g., thread_id, resume_from)
+    #' @param verbose Logical; if `TRUE`, log execution details. Overrides the
+    #'   graph-level default set at compile time.
     #' @return Final state as a named list
-    invoke = function(state = list(), config = list()) {
+    invoke = function(state = list(), config = list(), verbose = private$.verbose) {
       # Try to resume from checkpoint
       current_node <- private$entry
       step <- 0L
@@ -68,6 +73,8 @@ AgentGraph <- R6::R6Class(
         state <- config$resume_from$state %||% state
       }
 
+      if (verbose) cli::cli_inform("Starting graph execution at node {.val {current_node}}")
+
       while (step < private$max_iterations) {
         if (current_node == END) break
 
@@ -77,7 +84,14 @@ AgentGraph <- R6::R6Class(
         }
 
         # Run node handler
-        state <- private$run_node(current_node, state, config)
+        if (verbose) {
+          t0 <- proc.time()[[3L]]
+          state <- private$run_node(current_node, state, config)
+          elapsed <- proc.time()[[3L]] - t0
+          cli::cli_inform("Node {.val {current_node}} completed in {round(elapsed, 2)}s")
+        } else {
+          state <- private$run_node(current_node, state, config)
+        }
         step <- step + 1L
 
         # Checkpoint after node execution
@@ -92,12 +106,14 @@ AgentGraph <- R6::R6Class(
 
         # Resolve next node
         current_node <- private$resolve_next(current_node, state)
+        if (verbose) cli::cli_inform("Routing to {.val {current_node}} (iteration {step})")
       }
 
       if (step >= private$max_iterations && current_node != END) {
-        rlang::abort(paste0(
-          "Graph exceeded max_iterations (", private$max_iterations, ")."
-        ))
+        rlang::abort(
+          paste0("Graph exceeded max_iterations (", private$max_iterations, ")."),
+          call = NULL
+        )
       }
 
       state
@@ -106,8 +122,13 @@ AgentGraph <- R6::R6Class(
     #' @description Run the graph and collect state snapshots
     #' @param state Named list of initial state
     #' @param config Named list of configuration
+    #' @param on_step Optional callback function called after each node with the
+    #'   snapshot as its sole argument. Useful for real-time progress reporting.
+    #' @param verbose Logical; if `TRUE`, log execution details. Overrides the
+    #'   graph-level default set at compile time.
     #' @return List of `state_snapshot` objects
-    stream = function(state = list(), config = list()) {
+    stream = function(state = list(), config = list(), on_step = NULL,
+                      verbose = private$.verbose) {
       current_node <- private$entry
       step <- 0L
       snapshots <- list()
@@ -117,24 +138,35 @@ AgentGraph <- R6::R6Class(
         state <- config$resume_from$state %||% state
       }
 
+      if (verbose) cli::cli_inform("Starting graph streaming at node {.val {current_node}}")
+
       while (step < private$max_iterations) {
         if (current_node == END) break
 
-        state <- private$run_node(current_node, state, config)
+        if (verbose) {
+          t0 <- proc.time()[[3L]]
+          state <- private$run_node(current_node, state, config)
+          elapsed <- proc.time()[[3L]] - t0
+          cli::cli_inform("Node {.val {current_node}} completed in {round(elapsed, 2)}s")
+        } else {
+          state <- private$run_node(current_node, state, config)
+        }
         step <- step + 1L
 
-        snapshots <- c(
-          snapshots,
-          list(new_state_snapshot(state, current_node, step))
-        )
+        snap <- new_state_snapshot(state, current_node, step)
+        snapshots <- c(snapshots, list(snap))
+
+        if (is.function(on_step)) on_step(snap)
 
         current_node <- private$resolve_next(current_node, state)
+        if (verbose) cli::cli_inform("Routing to {.val {current_node}} (iteration {step})")
       }
 
       if (step >= private$max_iterations && current_node != END) {
-        rlang::abort(paste0(
-          "Graph exceeded max_iterations (", private$max_iterations, ")."
-        ))
+        rlang::abort(
+          paste0("Graph exceeded max_iterations (", private$max_iterations, ")."),
+          call = NULL
+        )
       }
 
       snapshots
@@ -214,33 +246,46 @@ AgentGraph <- R6::R6Class(
     interrupt_after = NULL,
     checkpointer = NULL,
     max_iterations = NULL,
+    .verbose = FALSE,
     edge_map = NULL,
     cond_map = NULL,
 
     run_node = function(node_name, state, config) {
       handler <- private$nodes[[node_name]]
 
-      if (inherits(handler, "Agent")) {
-        # Agent handler: extract last message, invoke, wrap response
-        msgs <- state$messages
-        last_msg <- if (length(msgs) > 0L) msgs[[length(msgs)]] else ""
-        response <- handler$invoke(last_msg, state = state)
-        updates <- list(messages = list(response))
-      } else {
-        updates <- handler(state, config)
-      }
+      result <- tryCatch(
+        {
+          if (inherits(handler, "Agent")) {
+            # Agent handler: extract last message, invoke, wrap response
+            msgs <- state$messages
+            last_msg <- if (length(msgs) > 0L) msgs[[length(msgs)]] else ""
+            response <- handler$invoke(last_msg, state = state)
+            list(messages = list(response))
+          } else {
+            handler(state, config)
+          }
+        },
+        error = function(e) {
+          rlang::abort(
+            paste0("Error in node '", node_name, "': ", conditionMessage(e)),
+            parent = e,
+            call = NULL
+          )
+        }
+      )
 
-      if (!is.list(updates)) {
-        rlang::abort(paste0(
-          "Node '", node_name, "' handler must return a named list of state updates."
-        ))
+      if (!is.list(result)) {
+        rlang::abort(
+          paste0("Node '", node_name, "' handler must return a named list of state updates."),
+          call = NULL
+        )
       }
 
       # Merge updates
       if (!is.null(private$schema)) {
-        private$schema$merge(state, updates)
+        private$schema$merge(state, result)
       } else {
-        merge_state_plain(state, updates)
+        merge_state_plain(state, result)
       }
     },
 
@@ -250,17 +295,23 @@ AgentGraph <- R6::R6Class(
       if (!is.null(ce)) {
         key <- ce$condition(state)
         if (!is.character(key) || length(key) != 1L) {
-          rlang::abort(paste0(
-            "Condition function for node '", node_name,
-            "' must return a single character key."
-          ))
+          rlang::abort(
+            paste0(
+              "Condition function for node '", node_name,
+              "' must return a single character key."
+            ),
+            call = NULL
+          )
         }
         target <- ce$mapping[[key]]
         if (is.null(target)) {
-          rlang::abort(paste0(
-            "Condition returned '", key,
-            "' but no mapping exists for that key from node '", node_name, "'."
-          ))
+          rlang::abort(
+            paste0(
+              "Condition returned '", key,
+              "' but no mapping exists for that key from node '", node_name, "'."
+            ),
+            call = NULL
+          )
         }
         return(target)
       }
@@ -271,9 +322,10 @@ AgentGraph <- R6::R6Class(
         return(target)
       }
 
-      rlang::abort(paste0(
-        "No edge found from node '", node_name, "'. Dead end."
-      ))
+      rlang::abort(
+        paste0("No edge found from node '", node_name, "'. Dead end."),
+        call = NULL
+      )
     },
 
     signal_interrupt = function(state, node_name, step) {

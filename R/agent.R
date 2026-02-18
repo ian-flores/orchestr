@@ -1,9 +1,10 @@
-#' Agent
+#' Agent R6 Class
 #'
 #' @description
 #' An agent wraps an [ellmer::Chat] object with optional tool registration
-#' and secure code execution via securer.
+#' and secure code execution via securer. Use [agent()] to create instances.
 #'
+#' @keywords internal
 #' @export
 Agent <- R6::R6Class(
   "Agent",
@@ -49,6 +50,15 @@ Agent <- R6::R6Class(
     #' @param state Named list. Additional state passed to the invocation.
     #' @return Character scalar: the agent's text response.
     invoke = function(prompt, state = list()) {
+      extra <- state[!names(state) %in% c("messages", "")]
+      if (length(extra) > 0L) {
+        context_lines <- vapply(names(extra), function(nm) {
+          paste0(nm, ": ", paste(as.character(extra[[nm]]), collapse = ", "))
+        }, character(1))
+        prompt <- paste0(
+          "Context:\n", paste(context_lines, collapse = "\n"), "\n\n", prompt
+        )
+      }
       private$.chat$chat(prompt)
     },
 
@@ -57,6 +67,15 @@ Agent <- R6::R6Class(
     #' @param state Named list. Additional state.
     #' @return An ellmer Turn object (the last assistant turn).
     invoke_turn = function(prompt, state = list()) {
+      extra <- state[!names(state) %in% c("messages", "")]
+      if (length(extra) > 0L) {
+        context_lines <- vapply(names(extra), function(nm) {
+          paste0(nm, ": ", paste(as.character(extra[[nm]]), collapse = ", "))
+        }, character(1))
+        prompt <- paste0(
+          "Context:\n", paste(context_lines, collapse = "\n"), "\n\n", prompt
+        )
+      }
       private$.chat$chat(prompt)
       private$.chat$last_turn()
     },
@@ -88,7 +107,7 @@ Agent <- R6::R6Class(
         chat = cloned_chat,
         tools = list(),
         system_prompt = NULL,
-        secure = FALSE,
+        secure = private$.secure,
         sandbox = private$.sandbox,
         memory = private$.memory
       )
@@ -162,3 +181,25 @@ Agent <- R6::R6Class(
     }
   )
 )
+
+#' Create an Agent
+#'
+#' Preferred constructor for creating Agent objects. Wraps the
+#' \code{Agent} R6 class.
+#'
+#' @aliases Agent
+#' @param name Character string identifying this agent.
+#' @param chat An ellmer::Chat object.
+#' @param tools List of tool objects.
+#' @param system_prompt Optional system prompt override.
+#' @param secure Logical; use securer sandbox.
+#' @param sandbox Logical; enable OS sandbox when secure is TRUE.
+#' @param memory Optional Memory object.
+#' @return An \code{Agent} R6 object.
+#' @export
+agent <- function(name, chat, tools = list(), system_prompt = NULL,
+                  secure = FALSE, sandbox = TRUE, memory = NULL) {
+  Agent$new(name = name, chat = chat, tools = tools,
+            system_prompt = system_prompt, secure = secure,
+            sandbox = sandbox, memory = memory)
+}

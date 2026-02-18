@@ -4,11 +4,15 @@
 \alias{state_schema}
 \title{Create a typed state schema}
 \usage{
-state_schema(...)
+state_schema(..., .max_append = Inf)
 }
 \arguments{
 \item{...}{Named field specifications (e.g., \code{messages = "append:list"},
 \code{done = "logical"}).}
+
+\item{.max_append}{Maximum number of items to retain for append reducers.
+Defaults to \code{Inf} (no limit). When the limit is exceeded, only the most
+recent items are kept.}
 }
 \value{
 A \code{StateSchema} R6 object.

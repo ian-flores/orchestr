@@ -5,7 +5,7 @@
 #'
 #' @param graph An `AgentGraph` object with `$get_nodes()` and `$get_edges()`
 #'   methods.
-#' @return A character scalar containing the Mermaid diagram source.
+#' @return A character string containing a Mermaid diagram definition.
 #' @export
 as_mermaid <- function(graph) {
   nodes <- graph$get_nodes()
@@ -39,7 +39,7 @@ as_mermaid <- function(graph) {
         label <- names(edge$mapping)[[i]]
         target <- edge$mapping[[i]]
         to_id <- sanitize_id(target)
-        lines <- c(lines, sprintf("    %s -->|%s| %s", from_id, label, to_id))
+        lines <- c(lines, sprintf("    %s -->|%s| %s", from_id, sanitize_label(label), to_id))
       }
     } else {
       # Fixed edge
@@ -58,7 +58,7 @@ render_node <- function(node) {
     return("END((END))")
   }
   id <- sanitize_id(node)
-  sprintf("%s[%s]", id, node)
+  sprintf("%s[\"%s\"]", id, sanitize_label(node))
 }
 
 sanitize_id <- function(node) {
@@ -66,4 +66,17 @@ sanitize_id <- function(node) {
     return("END")
   }
   gsub("[^A-Za-z0-9_]", "_", node)
+}
+
+sanitize_label <- function(label) {
+  # Escape characters that have special meaning in Mermaid
+  label <- gsub('"', "&quot;", label, fixed = TRUE)
+  label <- gsub("<", "&lt;", label, fixed = TRUE)
+  label <- gsub(">", "&gt;", label, fixed = TRUE)
+  label <- gsub("[", "&#91;", label, fixed = TRUE)
+  label <- gsub("]", "&#93;", label, fixed = TRUE)
+  label <- gsub("{", "&#123;", label, fixed = TRUE)
+  label <- gsub("}", "&#125;", label, fixed = TRUE)
+  label <- gsub("|", "&#124;", label, fixed = TRUE)
+  label
 }
