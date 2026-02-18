@@ -88,6 +88,54 @@ test_that("all supported types validate correctly", {
 })
 
 
+# ---- max_append parameter ----
+
+test_that("max_append truncates append reducer results", {
+  schema <- state_schema(items = "append:list", .max_append = 3)
+  # Start with empty, add 5 items one at a time
+  state <- list(items = list())
+  state <- schema$merge(state, list(items = list("a")))
+  state <- schema$merge(state, list(items = list("b")))
+  state <- schema$merge(state, list(items = list("c")))
+  state <- schema$merge(state, list(items = list("d")))
+  state <- schema$merge(state, list(items = list("e")))
+
+  # Only the last 3 items should remain
+  expect_length(state$items, 3L)
+  expect_equal(state$items, list("c", "d", "e"))
+})
+
+test_that("max_append truncates when adding multiple items at once", {
+  schema <- state_schema(log = "append:list", .max_append = 2)
+  state <- list(log = list("old"))
+  state <- schema$merge(state, list(log = list("new1", "new2", "new3")))
+  expect_length(state$log, 2L)
+  expect_equal(state$log, list("new2", "new3"))
+})
+
+test_that("default max_append = Inf allows unlimited growth", {
+  schema <- state_schema(items = "append:list")
+  expect_equal(schema$max_append, Inf)
+  state <- list(items = list())
+  for (i in seq_len(100)) {
+    state <- schema$merge(state, list(items = list(i)))
+  }
+  expect_length(state$items, 100L)
+})
+
+test_that("max_append does not affect overwrite reducer", {
+  schema <- state_schema(items = "append:list", count = "numeric", .max_append = 2)
+  state <- list(items = list(), count = 0)
+  state <- schema$merge(state, list(items = list("a"), count = 100))
+  state <- schema$merge(state, list(items = list("b"), count = 200))
+  state <- schema$merge(state, list(items = list("c"), count = 300))
+  # append field is truncated
+  expect_length(state$items, 2L)
+  # overwrite field is just the last value
+  expect_equal(state$count, 300)
+})
+
+
 # ---- state_snapshot S3 class ----
 
 test_that("new_state_snapshot() creates correct structure", {

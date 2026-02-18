@@ -118,6 +118,84 @@ test_that("stream() returns state snapshots", {
   expect_equal(snapshots[[2]]$state$value, 2)
 })
 
+test_that("stream() on_step callback is invoked for each step", {
+  ag <- build_linear_graph()
+  received_snapshots <- list()
+  callback <- function(snap) {
+    received_snapshots[[length(received_snapshots) + 1L]] <<- snap
+  }
+
+  snapshots <- ag$stream(list(value = 0), on_step = callback)
+  expect_length(received_snapshots, 2L)
+  expect_s3_class(received_snapshots[[1]], "state_snapshot")
+  expect_equal(received_snapshots[[1]]$node, "a")
+  expect_equal(received_snapshots[[2]]$node, "b")
+})
+
+
+# ---- Verbose logging ----
+
+test_that("invoke with verbose = TRUE emits log messages", {
+  ag <- build_linear_graph()
+  msgs <- character(0)
+  withCallingHandlers(
+    ag$invoke(list(value = 0), verbose = TRUE),
+    message = function(m) {
+      msgs <<- c(msgs, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  combined <- paste(msgs, collapse = " ")
+  # Should mention node names and "Starting"
+  expect_match(combined, "Starting graph execution")
+  expect_match(combined, "a")
+  expect_match(combined, "b")
+  expect_match(combined, "completed in")
+})
+
+test_that("stream with verbose = TRUE emits log messages", {
+  ag <- build_linear_graph()
+  msgs <- character(0)
+  withCallingHandlers(
+    ag$stream(list(value = 0), verbose = TRUE),
+    message = function(m) {
+      msgs <<- c(msgs, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  combined <- paste(msgs, collapse = " ")
+  expect_match(combined, "Starting graph streaming")
+  expect_match(combined, "completed in")
+})
+
+test_that("verbose = FALSE does not emit log messages", {
+  ag <- build_linear_graph()
+  msgs <- character(0)
+  withCallingHandlers(
+    ag$invoke(list(value = 0), verbose = FALSE),
+    message = function(m) {
+      msgs <<- c(msgs, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_length(msgs, 0L)
+})
+
+
+# ---- run_node error wrapping ----
+
+test_that("run_node wraps handler errors with node name", {
+  g <- graph_builder()
+  g$add_node("failing_node", function(state, config) {
+    stop("something broke")
+  })
+  g$add_edge("failing_node", "__end__")
+  g$set_entry_point("failing_node")
+  ag <- g$compile()
+
+  expect_error(ag$invoke(list()), "Error in node 'failing_node'")
+})
+
 
 # ---- Mermaid output ----
 

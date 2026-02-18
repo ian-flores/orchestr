@@ -65,6 +65,22 @@ test_that("save() validates inputs", {
   expect_error(cp$save("t1", "a", "not a list"), "must be a list")
 })
 
+test_that("thread_id longer than 200 characters is rejected", {
+  cp <- checkpointer()
+  long_id <- paste(rep("a", 201), collapse = "")
+  expect_error(cp$save(long_id, "node_a", list(x = 1)), "200 characters")
+  expect_error(cp$load(long_id), "200 characters")
+  expect_error(cp$history(long_id), "200 characters")
+})
+
+test_that("thread_id exactly 200 characters is accepted", {
+  cp <- checkpointer()
+  exact_id <- paste(rep("b", 200), collapse = "")
+  expect_no_error(cp$save(exact_id, "node_a", list(x = 1)))
+  result <- cp$load(exact_id)
+  expect_equal(result$node, "node_a")
+})
+
 
 # ---- Checkpointer: file backend ----
 

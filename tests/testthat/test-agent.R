@@ -91,6 +91,23 @@ test_that("fork creates independent copy", {
   expect_type(forked_result, "character")
 })
 
+test_that("fork preserves the secure flag", {
+  chat <- MockChat$new(responses = list("ok"))
+  # Create non-secure agent and fork it
+  agent_nonsecure <- Agent$new(name = "ns", chat = chat, secure = FALSE)
+  forked_ns <- agent_nonsecure$fork()
+  # Access internal field via R6 enclosure
+  expect_false(forked_ns$.__enclos_env__$private$.secure)
+
+  # We can't fully test secure = TRUE without securer installed,
+
+  # but we can check the field is copied correctly by checking default
+  chat2 <- MockChat$new(responses = list("ok"))
+  agent_default <- Agent$new(name = "def", chat = chat2)
+  forked_default <- agent_default$fork()
+  expect_false(forked_default$.__enclos_env__$private$.secure)
+})
+
 test_that("system_prompt is set on chat", {
   chat <- MockChat$new()
   agent <- Agent$new(
@@ -146,4 +163,78 @@ test_that("print shows secure info when secure", {
   output_str <- paste(output, collapse = "\n")
   expect_match(output_str, "display")
   expect_match(output_str, "Tools.*2")
+})
+
+# ---- agent() constructor function ----
+
+test_that("agent() constructor creates an Agent", {
+  chat <- MockChat$new(responses = list("hello"))
+  a <- agent(name = "from-constructor", chat = chat)
+  expect_s3_class(a, "Agent")
+})
+
+test_that("agent() passes through all arguments", {
+  chat <- MockChat$new()
+  a <- agent(
+    name = "full",
+    chat = chat,
+    system_prompt = "Be helpful",
+    secure = FALSE,
+    sandbox = FALSE
+  )
+  expect_s3_class(a, "Agent")
+  expect_equal(chat$get_system_prompt(), "Be helpful")
+})
+
+# ---- invoke with state context injection ----
+
+test_that("invoke injects state fields as context prefix", {
+  chat <- MockChat$new(responses = list("got it"))
+  agent <- Agent$new(name = "ctx", chat = chat)
+
+  agent$invoke("do something", state = list(
+    messages = list("ignored"),
+    user_name = "Alice",
+    topic = "weather"
+  ))
+
+  # Check that the prompt sent to the chat had a "Context:" prefix
+  turns <- chat$get_turns()
+  user_prompt <- turns[[1]]$content
+  expect_match(user_prompt, "Context:")
+  expect_match(user_prompt, "user_name: Alice")
+  expect_match(user_prompt, "topic: weather")
+  expect_match(user_prompt, "do something")
+})
+
+test_that("invoke does not inject context when state has only messages", {
+  chat <- MockChat$new(responses = list("ok"))
+  agent <- Agent$new(name = "no-ctx", chat = chat)
+
+  agent$invoke("hello", state = list(messages = list("msg")))
+
+  turns <- chat$get_turns()
+  user_prompt <- turns[[1]]$content
+  # Should be just the prompt, no Context: prefix
+  expect_equal(user_prompt, "hello")
+})
+
+test_that("invoke handles empty state gracefully", {
+  chat <- MockChat$new(responses = list("fine"))
+  agent <- Agent$new(name = "empty-state", chat = chat)
+
+  result <- agent$invoke("test", state = list())
+  expect_equal(result, "fine")
+})
+
+test_that("invoke_turn also injects state context", {
+  chat <- MockChat$new(responses = list("noted"))
+  agent <- Agent$new(name = "turn-ctx", chat = chat)
+
+  turn <- agent$invoke_turn("do it", state = list(priority = "high"))
+
+  turns <- chat$get_turns()
+  user_prompt <- turns[[1]]$content
+  expect_match(user_prompt, "Context:")
+  expect_match(user_prompt, "priority: high")
 })

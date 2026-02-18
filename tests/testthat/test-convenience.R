@@ -1,25 +1,41 @@
 # ---- react_graph ----
 
 test_that("react_graph() builds a runnable graph", {
-  chat <- MockChat$new(responses = list("done"))
+
+chat <- MockChat$new(responses = list("done"))
   agent <- Agent$new(name = "react", chat = chat)
   ag <- react_graph(agent)
   expect_s3_class(ag, "AgentGraph")
   expect_true("agent" %in% ag$get_nodes())
-  expect_true("tools" %in% ag$get_nodes())
+  # New architecture: single node, no separate "tools" node
+  expect_length(ag$get_nodes(), 1L)
 })
 
-test_that("react_graph() routes to end when no tool calls", {
+test_that("react_graph() routes agent directly to END", {
   chat <- MockChat$new(responses = list("final answer"))
   agent <- Agent$new(name = "react", chat = chat)
   ag <- react_graph(agent)
 
-  result <- ag$invoke(list(messages = list("question"), pending_tool_calls = list()))
+  result <- ag$invoke(list(messages = list("question")))
   expect_true("messages" %in% names(result))
 })
 
 test_that("react_graph() rejects non-Agent", {
   expect_error(react_graph("bad"), "Agent object")
+})
+
+test_that("react_graph() graph has agent -> END edge", {
+  chat <- MockChat$new(responses = list("ok"))
+  agent <- Agent$new(name = "react", chat = chat)
+  ag <- react_graph(agent)
+
+  edges <- ag$get_edges()
+  fixed <- edges$fixed
+  # There should be a fixed edge from agent to END
+  targets <- vapply(fixed, function(e) e$to, character(1))
+  sources <- vapply(fixed, function(e) e$from, character(1))
+  expect_true("agent" %in% sources)
+  expect_true("__end__" %in% targets)
 })
 
 
@@ -125,8 +141,7 @@ test_that("supervisor_graph() registers route tool on supervisor chat", {
   workers <- list(w1 = Agent$new(name = "w1", chat = MockChat$new()))
 
   ag <- supervisor_graph(supervisor, workers)
-  # After compile, the route tool should have been registered during invoke
-  result <- ag$invoke(list(messages = list("start")))
+  # Route tool is registered ONCE during graph construction (not during invoke)
   tools <- mock_chat_tools(sup_chat)
   expect_true(length(tools) > 0L)
 })

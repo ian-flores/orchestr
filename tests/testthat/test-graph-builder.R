@@ -113,3 +113,44 @@ test_that("set_checkpointer() rejects non-Checkpointer", {
 test_that("END is exported and equals __end__", {
   expect_equal(END, "__end__")
 })
+
+# ---- compile(verbose = TRUE) ----
+
+test_that("compile(verbose = TRUE) produces a verbose AgentGraph", {
+  g <- graph_builder()
+  g$add_node("a", function(s, c) list(x = 1))
+  g$add_edge("a", "__end__")
+  g$set_entry_point("a")
+  ag <- g$compile(verbose = TRUE)
+  expect_s3_class(ag, "AgentGraph")
+
+  # Verify the AgentGraph logs when invoked
+  msgs <- character(0)
+  withCallingHandlers(
+    ag$invoke(list()),
+    message = function(m) {
+      msgs <<- c(msgs, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  combined <- paste(msgs, collapse = " ")
+  expect_match(combined, "Starting graph execution")
+})
+
+test_that("compile(verbose = FALSE) produces a quiet AgentGraph", {
+  g <- graph_builder()
+  g$add_node("a", function(s, c) list(x = 1))
+  g$add_edge("a", "__end__")
+  g$set_entry_point("a")
+  ag <- g$compile(verbose = FALSE)
+
+  msgs <- character(0)
+  withCallingHandlers(
+    ag$invoke(list()),
+    message = function(m) {
+      msgs <<- c(msgs, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_length(msgs, 0L)
+})

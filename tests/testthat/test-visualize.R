@@ -26,8 +26,8 @@ test_that("as_mermaid renders simple linear graph", {
 
   result <- as_mermaid(graph)
   expect_match(result, "graph TD")
-  expect_match(result, "start\\[start\\]")
-  expect_match(result, "process\\[process\\]")
+  expect_match(result, 'start\\["start"\\]')
+  expect_match(result, 'process\\["process"\\]')
   expect_match(result, "END\\(\\(END\\)\\)")
   expect_match(result, "start --> process")
   expect_match(result, "process --> END")
@@ -60,9 +60,44 @@ test_that("as_mermaid sanitizes node names with special chars", {
 
   result <- as_mermaid(graph)
   # Hyphens and spaces replaced with underscores in IDs
-  expect_match(result, "my_node\\[my-node\\]")
-  expect_match(result, "other_node\\[other node\\]")
+  expect_match(result, 'my_node\\["my-node"\\]')
+  expect_match(result, 'other_node\\["other node"\\]')
   expect_match(result, "my_node --> other_node")
+})
+
+test_that("as_mermaid sanitizes labels with Mermaid-special characters", {
+  # Test that special characters like [], {}, <>, |, " in labels are escaped
+  graph <- MockGraph$new(
+    nodes = c("node[1]", "node<2>"),
+    edges = list(
+      list(from = "node[1]", to = "node<2>")
+    )
+  )
+
+  result <- as_mermaid(graph)
+  # IDs should have special chars replaced with underscores
+  expect_match(result, "node_1_")
+  expect_match(result, "node_2_")
+  # Labels should be sanitized with entity references, inside quotes
+  expect_match(result, '\\["node&#91;1&#93;"\\]')
+  expect_match(result, '\\["node&lt;2&gt;"\\]')
+})
+
+test_that("as_mermaid handles conditional edge labels with special chars", {
+  graph <- MockGraph$new(
+    nodes = c("a", "b"),
+    edges = list(
+      list(
+        from = "a",
+        condition = "fn",
+        mapping = list("go|fast" = "b")
+      )
+    )
+  )
+
+  result <- as_mermaid(graph)
+  # The pipe character in label should be escaped
+  expect_match(result, "go&#124;fast")
 })
 
 test_that("END constant equals __end__", {
