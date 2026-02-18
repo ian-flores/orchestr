@@ -75,9 +75,7 @@ Agent <- R6::R6Class(
 
     #' @description Reset conversation history, keeping tools registered.
     reset = function() {
-      # Clear turns by setting a fresh system prompt (preserves tools)
-      sp <- private$.chat$get_system_prompt()
-      private$.chat$set_system_prompt(sp)
+      private$.chat$set_turns(list())
       invisible(self)
     },
 

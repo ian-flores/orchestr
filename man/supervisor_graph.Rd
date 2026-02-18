@@ -4,12 +4,15 @@
 \alias{supervisor_graph}
 \title{Create a supervisor graph that routes to workers}
 \usage{
-supervisor_graph(supervisor, workers)
+supervisor_graph(supervisor, workers, max_iterations = 50L)
 }
 \arguments{
-\item{supervisor}{An \code{Agent} object that decides routing.}
+\item{supervisor}{An \code{Agent} object that decides routing. A system prompt
+suffix and a \code{route} tool are automatically injected.}
 
 \item{workers}{Named list of \code{Agent} objects.}
+
+\item{max_iterations}{Integer safety cap (default 50).}
 }
 \value{
 An \code{AgentGraph} object.
@@ -17,4 +20,9 @@ An \code{AgentGraph} object.
 \description{
 The supervisor agent decides which worker to invoke based on its response.
 Each worker's response is fed back to the supervisor for re-evaluation.
+}
+\details{
+The supervisor node sets \code{state$next_worker} via a routing tool that the
+supervisor calls. The routing condition reads this field to dispatch to the
+correct worker, or end the graph if the supervisor calls \code{route("FINISH")}.
 }

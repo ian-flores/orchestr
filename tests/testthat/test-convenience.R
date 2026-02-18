@@ -79,8 +79,8 @@ test_that("pipeline_graph() rejects non-Agent args", {
 
 # ---- supervisor_graph ----
 
-test_that("supervisor_graph() builds a graph", {
-  sup_chat <- MockChat$new(responses = list("end"))
+test_that("supervisor_graph() builds a graph with correct nodes", {
+  sup_chat <- MockChat$new(responses = list("thinking..."))
   supervisor <- Agent$new(name = "sup", chat = sup_chat)
 
   w1_chat <- MockChat$new(responses = list("worker1 result"))
@@ -92,27 +92,43 @@ test_that("supervisor_graph() builds a graph", {
   expect_true("worker1" %in% ag$get_nodes())
 })
 
-test_that("supervisor_graph() routes to worker by name in response", {
-  # Supervisor responds with the worker name, triggering routing
-  sup_chat <- MockChat$new(responses = list("worker1", "end"))
+test_that("supervisor_graph() injects routing system prompt", {
+  sup_chat <- MockChat$new(responses = list("done"))
   supervisor <- Agent$new(name = "sup", chat = sup_chat)
-
-  w1_chat <- MockChat$new(responses = list("worker1 done"))
-  workers <- list(worker1 = Agent$new(name = "w1", chat = w1_chat))
+  workers <- list(
+    coder = Agent$new(name = "c", chat = MockChat$new()),
+    writer = Agent$new(name = "w", chat = MockChat$new())
+  )
 
   ag <- supervisor_graph(supervisor, workers)
-  result <- ag$invoke(list(messages = list("start")))
-  expect_true(length(result$messages) > 0L)
+  sp <- sup_chat$get_system_prompt()
+  expect_match(sp, "coder")
+  expect_match(sp, "writer")
+  expect_match(sp, "FINISH")
 })
 
-test_that("supervisor_graph() routes to end when no worker matched", {
-  sup_chat <- MockChat$new(responses = list("no worker here"))
+test_that("supervisor_graph() defaults to FINISH when route tool not called", {
+  # MockChat doesn't execute tools, so next_worker stays NULL -> "FINISH" -> END
+  sup_chat <- MockChat$new(responses = list("I'll just think"))
   supervisor <- Agent$new(name = "sup", chat = sup_chat)
   workers <- list(alpha = Agent$new(name = "a", chat = MockChat$new()))
 
   ag <- supervisor_graph(supervisor, workers)
   result <- ag$invoke(list(messages = list("start")))
   expect_true(is.list(result))
+  expect_equal(result$next_worker, "FINISH")
+})
+
+test_that("supervisor_graph() registers route tool on supervisor chat", {
+  sup_chat <- MockChat$new(responses = list("thinking"))
+  supervisor <- Agent$new(name = "sup", chat = sup_chat)
+  workers <- list(w1 = Agent$new(name = "w1", chat = MockChat$new()))
+
+  ag <- supervisor_graph(supervisor, workers)
+  # After compile, the route tool should have been registered during invoke
+  result <- ag$invoke(list(messages = list("start")))
+  tools <- mock_chat_tools(sup_chat)
+  expect_true(length(tools) > 0L)
 })
 
 test_that("supervisor_graph() rejects invalid args", {

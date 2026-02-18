@@ -49,10 +49,13 @@ MockChat <- R6::R6Class(
       invisible(self)
     },
 
+    set_turns = function(value) {
+      private$.turns <- value
+      invisible(self)
+    },
+
     set_system_prompt = function(prompt) {
       private$.system_prompt <- prompt
-      # Reset turns when system prompt changes (mimic ellmer behavior)
-      private$.turns <- list()
       invisible(self)
     },
 
