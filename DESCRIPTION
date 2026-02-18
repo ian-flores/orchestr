@@ -1,0 +1,32 @@
+Package: orchestr
+Title: Graph-Based Agent Orchestration for R
+Version: 0.0.0.9000
+Authors@R:
+    person("Ian", "Flores Siaca", , "ian.flores.siaca@gmail.com",
+           role = c("aut", "cre"))
+Description: Graph-based multi-agent workflow orchestration built on
+    'ellmer' for LLM chat and optional 'securer' for sandboxed code
+    execution. Provides a fluent API for constructing agent graphs with
+    typed state, conditional routing, human-in-the-loop interrupts,
+    memory, and checkpointing. Convenience constructors cover common
+    patterns: ReAct loops, sequential pipelines, and supervisor routing.
+License: MIT + file LICENSE
+URL: https://github.com/ian-flores/orchestr
+BugReports: https://github.com/ian-flores/orchestr/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    cli,
+    ellmer (>= 0.4.0),
+    jsonlite,
+    R6,
+    rlang (>= 1.1.0)
+Suggests:
+    knitr,
+    rmarkdown,
+    securer (>= 0.1.0),
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+VignetteBuilder: knitr

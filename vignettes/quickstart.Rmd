@@ -1,0 +1,112 @@
+---
+title: "Getting Started with orchestr"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with orchestr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Installation
+
+```{r install}
+# install.packages("remotes")
+remotes::install_github("ian-flores/orchestr")
+```
+
+## Your First Agent
+
+An `Agent` wraps an ellmer `Chat` object. It can register tools and
+optionally run code in a securer sandbox.
+
+```{r single-agent}
+library(orchestr)
+library(ellmer)
+
+chat <- chat_anthropic(model = "claude-sonnet-4-5-20250514")
+agent <- Agent$new(
+  name = "assistant",
+  chat = chat,
+  system_prompt = "You are a helpful assistant."
+)
+
+# Single-turn conversation
+response <- agent$invoke("What is the capital of France?")
+cat(response)
+```
+
+## Adding Tools
+
+Agents become more powerful when you give them tools.
+
+```{r tools}
+weather_tool <- tool(
+  function(city) {
+    paste0("The weather in ", city, " is sunny, 22C.")
+  },
+  "Get the current weather for a city.",
+  arguments = list(
+    city = type_string("City name")
+  )
+)
+
+agent <- Agent$new(
+  name = "weather-bot",
+  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+  tools = list(weather_tool),
+  system_prompt = "You help users check the weather. Use the weather tool."
+)
+
+response <- agent$invoke("What's the weather in Tokyo?")
+cat(response)
+```
+
+## A Simple ReAct Graph
+
+The ReAct pattern (Reason + Act) loops an agent between thinking and
+tool use until it decides to stop.
+
+```{r react}
+# Define the agent
+agent <- Agent$new(
+  name = "researcher",
+  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+  tools = list(weather_tool),
+  system_prompt = "Answer questions using tools when needed."
+)
+
+# Build the graph
+g <- graph_builder()
+g$add_node("agent", agent)
+g$add_node("check", function(state, config) {
+  # If the agent used a tool, loop back; otherwise end
+  state
+})
+g$add_edge("agent", "check")
+g$add_conditional_edge(
+  "check",
+  condition = function(state) {
+    msgs <- state$messages
+    last <- msgs[[length(msgs)]]
+    if (grepl("TOOL_CALL", last)) "continue" else "done"
+  },
+  mapping = list(continue = "agent", done = END)
+)
+g$set_entry_point("agent")
+
+graph <- g$compile()
+result <- graph$invoke(list(messages = list("What's the weather in Paris?")))
+```
+
+## Next Steps
+
+- **[Multi-Agent Workflows](multi-agent.html)** -- pipelines and supervisor routing
+- **[Secure Execution](securer.html)** -- sandboxed code execution with securer

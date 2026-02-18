@@ -1,0 +1,9 @@
+^LICENSE\.md$
+^\.Rproj\.user$
+^.*\.Rproj$
+^CLAUDE\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
+^vignettes/.*\.html$

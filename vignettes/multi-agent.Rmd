@@ -1,0 +1,144 @@
+---
+title: "Multi-Agent Workflows"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Multi-Agent Workflows}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Pipeline Pattern
+
+A pipeline passes state through a sequence of agents, each transforming
+it before handing off to the next.
+
+```{r pipeline}
+library(orchestr)
+library(ellmer)
+
+# Agent 1: Draft writer
+drafter <- Agent$new(
+  name = "drafter",
+  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+  system_prompt = "Write a short draft on the given topic."
+)
+
+# Agent 2: Editor
+editor <- Agent$new(
+  name = "editor",
+  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+  system_prompt = "Improve the following draft. Fix grammar and clarity."
+)
+
+# Build a simple two-stage pipeline
+g <- graph_builder()
+g$add_node("draft", drafter)
+g$add_node("edit", editor)
+g$add_edge("draft", "edit")
+g$add_edge("edit", END)
+g$set_entry_point("draft")
+
+pipeline <- g$compile()
+
+result <- pipeline$invoke(list(
+  messages = list("Write about the benefits of open source software.")
+))
+cat(result$messages[[length(result$messages)]])
+```
+
+## Supervisor Pattern
+
+A supervisor agent routes tasks to specialized workers based on the
+content of the request.
+
+```{r supervisor}
+# Specialized agents
+math_agent <- Agent$new(
+  name = "math",
+  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+  system_prompt = "You are a math expert. Solve math problems step by step."
+)
+
+writing_agent <- Agent$new(
+  name = "writing",
+  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+  system_prompt = "You are a writing expert. Help with writing tasks."
+)
+
+# Build the supervisor graph
+g <- graph_builder()
+
+# Supervisor node: decides which agent to route to
+g$add_node("supervisor", function(state, config) {
+  msg <- state$messages[[length(state$messages)]]
+  # Simple keyword-based routing
+  if (grepl("math|calculate|equation", msg, ignore.case = TRUE)) {
+    state$route <- "math"
+  } else {
+    state$route <- "writing"
+  }
+  state
+})
+
+g$add_node("math", math_agent)
+g$add_node("writing", writing_agent)
+
+# Conditional routing from supervisor
+g$add_conditional_edge(
+  "supervisor",
+  condition = function(state) state$route,
+  mapping = list(math = "math", writing = "writing")
+)
+
+# Both workers route to END
+g$add_edge("math", END)
+g$add_edge("writing", END)
+g$set_entry_point("supervisor")
+
+supervisor <- g$compile()
+
+# Route to math
+result <- supervisor$invoke(list(
+  messages = list("Calculate the integral of x^2 from 0 to 1.")
+))
+```
+
+## Streaming State Snapshots
+
+Use `$stream()` to collect state snapshots at each step, useful for
+debugging or building progress indicators.
+
+```{r stream}
+snapshots <- pipeline$stream(list(
+  messages = list("Write about functional programming in R.")
+))
+
+for (snap in snapshots) {
+  cat(sprintf("Step %d, node: %s\n", snap$step, snap$node))
+}
+```
+
+## Visualizing the Graph
+
+Generate a Mermaid diagram to visualize the graph structure.
+
+```{r mermaid}
+cat(as_mermaid(supervisor))
+# Output:
+# graph TD
+#     supervisor[supervisor]
+#     math[math]
+#     writing[writing]
+#     supervisor -->|math| math
+#     supervisor -->|writing| writing
+#     math --> END((END))
+#     writing --> END((END))
+```
