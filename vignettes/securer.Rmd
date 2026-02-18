@@ -23,7 +23,7 @@ OS-level sandboxing so that generated code cannot access the filesystem,
 network, or system resources beyond what you explicitly allow.
 
 orchestr integrates with securer through the `secure = TRUE` flag on
-`Agent`.
+`agent()`.
 
 ## Installation
 
@@ -51,25 +51,25 @@ code_tool <- securer_tool(
 )
 
 # Create an agent with sandboxed execution
-agent <- Agent$new(
-  name = "code-runner",
-  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
-  tools = list(code_tool),
-  system_prompt = paste(
-    "You are a data analysis assistant.",
-    "Use the run_code tool to execute R code.",
-    "Always show your work."
+secure_agent <- agent("code-runner",
+  chat = chat_anthropic(
+    system_prompt = paste(
+      "You are a data analysis assistant.",
+      "Use the run_code tool to execute R code.",
+      "Always show your work."
+    )
   ),
+  tools = list(code_tool),
   secure = TRUE,
   sandbox = TRUE
 )
 
 # The agent can now safely execute LLM-generated code
-result <- agent$invoke("Calculate the mean of c(1, 5, 3, 7, 2) in R.")
+result <- secure_agent$invoke("Calculate the mean of c(1, 5, 3, 7, 2) in R.")
 cat(result)
 
 # Always close when done to clean up the securer session
-agent$close()
+secure_agent$close()
 ```
 
 ## What the Sandbox Restricts
@@ -104,16 +104,17 @@ calc_tool <- securer_tool(
   handler = function(expr) eval(parse(text = expr))
 )
 
-agent <- Agent$new(
-  name = "hybrid",
-  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+hybrid_agent <- agent("hybrid",
+  chat = chat_anthropic(
+    system_prompt = "You can check weather and do calculations."
+  ),
   tools = list(weather_tool, calc_tool),
   secure = TRUE
 )
 
 # The weather tool runs in-process; the calculate tool runs sandboxed
-result <- agent$invoke("What is 2^10? Also, what's the weather in London?")
-agent$close()
+result <- hybrid_agent$invoke("What is 2^10? Also, what's the weather in London?")
+hybrid_agent$close()
 ```
 
 ## Using Secure Agents in Graphs
@@ -121,23 +122,29 @@ agent$close()
 Secure agents work the same as regular agents inside a graph.
 
 ```{r graph}
-agent <- Agent$new(
-  name = "analyst",
-  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+analyst <- agent("analyst",
+  chat = chat_anthropic(
+    system_prompt = "You are a data analyst. Use run_code to compute answers."
+  ),
   tools = list(code_tool),
-  system_prompt = "You are a data analyst. Use run_code to compute answers.",
   secure = TRUE
 )
 
-g <- graph_builder()
-g$add_node("analyze", agent)
-g$add_edge("analyze", END)
-g$set_entry_point("analyze")
-
-graph <- g$compile()
+graph <- react_graph(analyst)
 result <- graph$invoke(list(
   messages = list("What is the standard deviation of c(10, 20, 30, 40, 50)?")
 ))
 
-agent$close()
+analyst$close()
+```
+
+You can also use `pipeline_graph()` and `supervisor_graph()` with secure
+agents. Use `verbose = TRUE` on `compile()` or `$invoke()` to trace
+execution flow:
+
+```{r graph-verbose}
+result <- graph$invoke(
+  list(messages = list("Compute the correlation between mpg and wt in mtcars.")),
+  verbose = TRUE
+)
 ```

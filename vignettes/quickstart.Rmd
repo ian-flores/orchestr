@@ -22,91 +22,115 @@ knitr::opts_chunk$set(
 remotes::install_github("ian-flores/orchestr")
 ```
 
+## API Key Setup
+
+orchestr uses [ellmer](https://github.com/tidyverse/ellmer) for LLM access.
+Set your provider's API key before running any examples:
+
+```{r api-key}
+# For Anthropic (Claude)
+Sys.setenv(ANTHROPIC_API_KEY = "your-key-here")
+
+# For OpenAI
+Sys.setenv(OPENAI_API_KEY = "your-key-here")
+```
+
+See ellmer's documentation for all supported providers.
+
 ## Your First Agent
 
-An `Agent` wraps an ellmer `Chat` object. It can register tools and
-optionally run code in a securer sandbox.
+An `Agent` wraps an ellmer `Chat` object. The `agent()` constructor is the
+recommended way to create one.
 
 ```{r single-agent}
 library(orchestr)
 library(ellmer)
 
-chat <- chat_anthropic(model = "claude-sonnet-4-5-20250514")
-agent <- Agent$new(
-  name = "assistant",
-  chat = chat,
-  system_prompt = "You are a helpful assistant."
-)
+analyst <- agent("analyst", chat = chat_anthropic(
+  system_prompt = "You are a data analyst. Analyze data and provide insights."
+))
 
 # Single-turn conversation
-response <- agent$invoke("What is the capital of France?")
+response <- analyst$invoke("Describe the key features of the iris dataset.")
 cat(response)
 ```
 
 ## Adding Tools
 
-Agents become more powerful when you give them tools.
+Agents become more powerful when you give them tools. ellmer's `Chat` class
+handles tool call loops internally -- when an agent has registered tools, they
+are executed automatically during `$chat()`.
 
 ```{r tools}
-weather_tool <- tool(
-  function(city) {
-    paste0("The weather in ", city, " is sunny, 22C.")
+summary_tool <- tool(
+  function(dataset_name) {
+    data <- get(dataset_name, envir = asNamespace("datasets"))
+    paste(capture.output(summary(data)), collapse = "\n")
   },
-  "Get the current weather for a city.",
+  "Get a summary of a built-in R dataset.",
   arguments = list(
-    city = type_string("City name")
+    dataset_name = type_string("Name of a dataset in the datasets package")
   )
 )
 
-agent <- Agent$new(
-  name = "weather-bot",
-  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
-  tools = list(weather_tool),
-  system_prompt = "You help users check the weather. Use the weather tool."
+analyst <- agent("analyst",
+  chat = chat_anthropic(
+    system_prompt = "You are a data analyst. Use your tools to examine data."
+  ),
+  tools = list(summary_tool)
 )
 
-response <- agent$invoke("What's the weather in Tokyo?")
+response <- analyst$invoke("Summarize the mtcars dataset.")
 cat(response)
 ```
 
-## A Simple ReAct Graph
+## Single-Agent Graph with `react_graph()`
 
-The ReAct pattern (Reason + Act) loops an agent between thinking and
-tool use until it decides to stop.
+The `react_graph()` function wraps a single agent with state management and
+checkpointing. This is the simplest way to run an agent inside a graph.
 
 ```{r react}
-# Define the agent
-agent <- Agent$new(
-  name = "researcher",
-  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
-  tools = list(weather_tool),
-  system_prompt = "Answer questions using tools when needed."
-)
+analyst <- agent("analyst", chat = chat_anthropic(
+  system_prompt = "You are a data analyst. Analyze data and provide insights."
+))
 
-# Build the graph
-g <- graph_builder()
-g$add_node("agent", agent)
-g$add_node("check", function(state, config) {
-  # If the agent used a tool, loop back; otherwise end
-  state
-})
-g$add_edge("agent", "check")
-g$add_conditional_edge(
-  "check",
-  condition = function(state) {
-    msgs <- state$messages
-    last <- msgs[[length(msgs)]]
-    if (grepl("TOOL_CALL", last)) "continue" else "done"
-  },
-  mapping = list(continue = "agent", done = END)
-)
-g$set_entry_point("agent")
+graph <- react_graph(analyst)
+result <- graph$invoke(list(messages = list(
+  "What are the key relationships in the mtcars dataset?"
+)))
+```
 
-graph <- g$compile()
-result <- graph$invoke(list(messages = list("What's the weather in Paris?")))
+Use `verbose = TRUE` when compiling to see execution flow. With the
+convenience functions, pass `verbose` to `$invoke()`:
+
+```{r react-verbose}
+result <- graph$invoke(
+  list(messages = list("Describe the distribution of mpg in mtcars.")),
+  verbose = TRUE
+)
+```
+
+## Agent Pipeline with `pipeline_graph()`
+
+Chain multiple agents in sequence. Each agent processes the state and passes
+it to the next. One LLM call per agent.
+
+```{r pipeline}
+profiler <- agent("profiler", chat = chat_anthropic(
+  system_prompt = "Profile datasets: describe columns, types, missing values, distributions."
+))
+
+analyst <- agent("analyst", chat = chat_anthropic(
+  system_prompt = "Given a data profile, identify patterns, correlations, and anomalies."
+))
+
+pipeline <- pipeline_graph(profiler, analyst)
+result <- pipeline$invoke(list(messages = list(
+  "Analyze the mtcars dataset focusing on fuel efficiency factors."
+)))
 ```
 
 ## Next Steps
 
-- **[Multi-Agent Workflows](multi-agent.html)** -- pipelines and supervisor routing
+- **[Multi-Agent Workflows](multi-agent.html)** -- pipelines, supervisor routing, and visualization
 - **[Secure Execution](securer.html)** -- sandboxed code execution with securer

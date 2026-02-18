@@ -18,35 +18,24 @@ knitr::opts_chunk$set(
 ## Pipeline Pattern
 
 A pipeline passes state through a sequence of agents, each transforming
-it before handing off to the next.
+it before handing off to the next. Use `pipeline_graph()` for a concise
+setup, or `graph_builder()` for full control.
 
-```{r pipeline}
+### Using `pipeline_graph()`
+
+```{r pipeline-convenience}
 library(orchestr)
 library(ellmer)
 
-# Agent 1: Draft writer
-drafter <- Agent$new(
-  name = "drafter",
-  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+drafter <- agent("drafter", chat = chat_anthropic(
   system_prompt = "Write a short draft on the given topic."
-)
+))
 
-# Agent 2: Editor
-editor <- Agent$new(
-  name = "editor",
-  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+editor <- agent("editor", chat = chat_anthropic(
   system_prompt = "Improve the following draft. Fix grammar and clarity."
-)
+))
 
-# Build a simple two-stage pipeline
-g <- graph_builder()
-g$add_node("draft", drafter)
-g$add_node("edit", editor)
-g$add_edge("draft", "edit")
-g$add_edge("edit", END)
-g$set_entry_point("draft")
-
-pipeline <- g$compile()
+pipeline <- pipeline_graph(drafter, editor)
 
 result <- pipeline$invoke(list(
   messages = list("Write about the benefits of open source software.")
@@ -54,62 +43,92 @@ result <- pipeline$invoke(list(
 cat(result$messages[[length(result$messages)]])
 ```
 
+### Data Analysis Pipeline
+
+A more realistic pipeline that profiles data, analyzes patterns, and
+produces a report:
+
+```{r pipeline-data}
+profiler <- agent("profiler", chat = chat_anthropic(
+  system_prompt = "Profile datasets: describe columns, types, missing values, distributions."
+))
+
+analyst <- agent("analyst", chat = chat_anthropic(
+  system_prompt = "Given a data profile, identify patterns, correlations, and anomalies."
+))
+
+reporter <- agent("reporter", chat = chat_anthropic(
+  system_prompt = "Write a clear, non-technical summary of analytical findings."
+))
+
+graph <- pipeline_graph(profiler, analyst, reporter)
+result <- graph$invoke(list(messages = list(
+  "Analyze the mtcars dataset focusing on fuel efficiency factors."
+)))
+```
+
+### Using `graph_builder()` Directly
+
+For more control (e.g., adding conditional edges), use the builder API:
+
+```{r pipeline-builder}
+drafter <- agent("drafter", chat = chat_anthropic(
+  system_prompt = "Write a short draft on the given topic."
+))
+
+editor <- agent("editor", chat = chat_anthropic(
+  system_prompt = "Improve the following draft. Fix grammar and clarity."
+))
+
+g <- graph_builder()
+g$add_node("draft", drafter)
+g$add_node("edit", editor)
+g$add_edge("draft", "edit")
+g$add_edge("edit", END)
+g$set_entry_point("draft")
+
+pipeline <- g$compile(verbose = TRUE)
+
+result <- pipeline$invoke(list(
+  messages = list("Write about functional programming in R.")
+))
+cat(result$messages[[length(result$messages)]])
+```
+
 ## Supervisor Pattern
 
 A supervisor agent routes tasks to specialized workers based on the
-content of the request.
+content of the request. Use `supervisor_graph()` for a concise setup.
 
 ```{r supervisor}
-# Specialized agents
-math_agent <- Agent$new(
-  name = "math",
-  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+supervisor <- agent("supervisor", chat = chat_anthropic(
+  system_prompt = "You coordinate workers to solve tasks."
+))
+
+math_worker <- agent("math", chat = chat_anthropic(
   system_prompt = "You are a math expert. Solve math problems step by step."
-)
+))
 
-writing_agent <- Agent$new(
-  name = "writing",
-  chat = chat_anthropic(model = "claude-sonnet-4-5-20250514"),
+writing_worker <- agent("writing", chat = chat_anthropic(
   system_prompt = "You are a writing expert. Help with writing tasks."
+))
+
+graph <- supervisor_graph(
+  supervisor = supervisor,
+  workers = list(math = math_worker, writing = writing_worker),
+  max_iterations = 10
 )
-
-# Build the supervisor graph
-g <- graph_builder()
-
-# Supervisor node: decides which agent to route to
-g$add_node("supervisor", function(state, config) {
-  msg <- state$messages[[length(state$messages)]]
-  # Simple keyword-based routing
-  if (grepl("math|calculate|equation", msg, ignore.case = TRUE)) {
-    state$route <- "math"
-  } else {
-    state$route <- "writing"
-  }
-  state
-})
-
-g$add_node("math", math_agent)
-g$add_node("writing", writing_agent)
-
-# Conditional routing from supervisor
-g$add_conditional_edge(
-  "supervisor",
-  condition = function(state) state$route,
-  mapping = list(math = "math", writing = "writing")
-)
-
-# Both workers route to END
-g$add_edge("math", END)
-g$add_edge("writing", END)
-g$set_entry_point("supervisor")
-
-supervisor <- g$compile()
 
 # Route to math
-result <- supervisor$invoke(list(
+result <- graph$invoke(list(
   messages = list("Calculate the integral of x^2 from 0 to 1.")
 ))
 ```
+
+The supervisor automatically receives a `route` tool that it calls to
+dispatch to workers or finish. Start with low `max_iterations` values to
+control costs -- each iteration involves an LLM call for the supervisor
+plus the selected worker.
 
 ## Streaming State Snapshots
 
@@ -117,6 +136,15 @@ Use `$stream()` to collect state snapshots at each step, useful for
 debugging or building progress indicators.
 
 ```{r stream}
+pipeline <- pipeline_graph(
+  agent("drafter", chat = chat_anthropic(
+    system_prompt = "Write a short draft on the given topic."
+  )),
+  agent("editor", chat = chat_anthropic(
+    system_prompt = "Improve the following draft."
+  ))
+)
+
 snapshots <- pipeline$stream(list(
   messages = list("Write about functional programming in R.")
 ))
@@ -131,7 +159,22 @@ for (snap in snapshots) {
 Generate a Mermaid diagram to visualize the graph structure.
 
 ```{r mermaid}
-cat(as_mermaid(supervisor))
+supervisor <- agent("supervisor", chat = chat_anthropic(
+  system_prompt = "You coordinate workers."
+))
+math_worker <- agent("math", chat = chat_anthropic(
+  system_prompt = "Math expert."
+))
+writing_worker <- agent("writing", chat = chat_anthropic(
+  system_prompt = "Writing expert."
+))
+
+graph <- supervisor_graph(
+  supervisor = supervisor,
+  workers = list(math = math_worker, writing = writing_worker)
+)
+
+cat(as_mermaid(graph))
 # Output:
 # graph TD
 #     supervisor[supervisor]
@@ -139,6 +182,6 @@ cat(as_mermaid(supervisor))
 #     writing[writing]
 #     supervisor -->|math| math
 #     supervisor -->|writing| writing
-#     math --> END((END))
-#     writing --> END((END))
+#     math --> supervisor
+#     writing --> supervisor
 ```
