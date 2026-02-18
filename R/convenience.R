@@ -12,7 +12,8 @@ react_graph <- function(agent, tools = list(), max_iterations = 10L) {
   if (!inherits(agent, "Agent")) {
     rlang::abort("`agent` must be an Agent object.")
   }
-  gb <- graph_builder()
+  schema <- state_schema(messages = "append:list")
+  gb <- graph_builder(state_schema = schema)
   gb$add_node("agent", as_node(agent))
   if (length(tools) > 0L) {
     gb$add_node("tools", tool_node(tools))
@@ -60,7 +61,8 @@ pipeline_graph <- function(...) {
     nms[missing] <- paste0("step_", missing)
   }
 
-  gb <- graph_builder()
+  schema <- state_schema(messages = "append:list")
+  gb <- graph_builder(state_schema = schema)
   for (i in seq_along(agents)) {
     gb$add_node(nms[[i]], as_node(agents[[i]]))
   }
@@ -94,7 +96,8 @@ supervisor_graph <- function(supervisor, workers) {
     }
   }
 
-  gb <- graph_builder()
+  schema <- state_schema(messages = "append:list")
+  gb <- graph_builder(state_schema = schema)
   gb$add_node("supervisor", as_node(supervisor))
 
   worker_names <- names(workers)
