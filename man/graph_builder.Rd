@@ -18,7 +18,7 @@ Create a graph builder
 \examples{
 g <- graph_builder()
 g$add_node("a", function(state, config) list(x = 1))
-g$add_edge("a", "__end__")
+g$add_edge("a", END)
 g$set_entry_point("a")
 }
 \seealso{

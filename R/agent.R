@@ -63,15 +63,7 @@ Agent <- R6::R6Class(
     #' @param state Named list. Additional state passed to the invocation.
     #' @return Character scalar: the agent's text response.
     invoke = function(prompt, state = list()) {
-      extra <- state[!names(state) %in% c("messages", "")]
-      if (length(extra) > 0L) {
-        context_lines <- vapply(names(extra), function(nm) {
-          paste0(nm, ": ", paste(as.character(extra[[nm]]), collapse = ", "))
-        }, character(1))
-        prompt <- paste0(
-          "Context:\n", paste(context_lines, collapse = "\n"), "\n\n", prompt
-        )
-      }
+      prompt <- private$build_prompt(prompt, state)
       private$.chat$chat(prompt)
     },
 
@@ -80,15 +72,7 @@ Agent <- R6::R6Class(
     #' @param state Named list. Additional state.
     #' @return An ellmer Turn object (the last assistant turn).
     invoke_turn = function(prompt, state = list()) {
-      extra <- state[!names(state) %in% c("messages", "")]
-      if (length(extra) > 0L) {
-        context_lines <- vapply(names(extra), function(nm) {
-          paste0(nm, ": ", paste(as.character(extra[[nm]]), collapse = ", "))
-        }, character(1))
-        prompt <- paste0(
-          "Context:\n", paste(context_lines, collapse = "\n"), "\n\n", prompt
-        )
-      }
+      prompt <- private$build_prompt(prompt, state)
       private$.chat$chat(prompt)
       private$.chat$last_turn()
     },
@@ -157,7 +141,13 @@ Agent <- R6::R6Class(
     secure = function() private$.secure
   ),
 
+  lock_class = TRUE,
+
   private = list(
+    finalize = function() {
+      self$close()
+    },
+
     .name = NULL,
     .chat = NULL,
     .tools = list(),
@@ -165,6 +155,19 @@ Agent <- R6::R6Class(
     .sandbox = TRUE,
     .memory = NULL,
     .secure_session = NULL,
+
+    build_prompt = function(prompt, state) {
+      extra <- state[!names(state) %in% c("messages", "")]
+      if (length(extra) > 0L) {
+        context_lines <- vapply(names(extra), function(nm) {
+          paste0(nm, ": ", paste(as.character(extra[[nm]]), collapse = ", "))
+        }, character(1))
+        prompt <- paste0(
+          "Context:\n", paste(context_lines, collapse = "\n"), "\n\n", prompt
+        )
+      }
+      prompt
+    },
 
     register_tools = function(tools) {
       if (length(tools) == 0L) return(invisible(NULL))
@@ -215,6 +218,15 @@ Agent <- R6::R6Class(
 #' @param sandbox Logical; enable OS sandbox when secure is TRUE.
 #' @param memory Optional Memory object.
 #' @return An \code{Agent} R6 object.
+#' @section Chat Protocol:
+#' The \code{chat} object must implement these methods:
+#' \itemize{
+#'   \item \code{$chat(prompt)} - Send a message and return the response text
+#'   \item \code{$get_turns()} - Return the conversation history
+#'   \item \code{$set_turns(turns)} - Replace the conversation history
+#'   \item \code{$clone(deep = TRUE)} - Deep clone the chat object
+#' }
+#'
 #' @family agents
 #' @export
 #' @examples

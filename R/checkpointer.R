@@ -10,6 +10,7 @@
 Checkpointer <- R6::R6Class(
 
   "Checkpointer",
+  lock_class = TRUE,
 
   public = list(
 
@@ -51,7 +52,8 @@ Checkpointer <- R6::R6Class(
       entry <- list(
         node = node_name,
         state = state,
-        timestamp = Sys.time()
+        timestamp = Sys.time(),
+        `_schema_version` = 1L
       )
 
       if (private$backend == "memory") {
@@ -115,15 +117,21 @@ Checkpointer <- R6::R6Class(
     },
 
     thread_path = function(thread_id) {
-      # Sanitize thread_id for use as filename
-      safe_id <- gsub("[^a-zA-Z0-9_-]", "_", thread_id)
+      safe_id <- private$safe_thread_id(thread_id)
       file.path(private$path, paste0(safe_id, ".jsonl"))
     },
 
-    # Backward-compat path for old .json files
+    # Backward-compat path for old .json files (uses old sanitization)
     legacy_thread_path = function(thread_id) {
       safe_id <- gsub("[^a-zA-Z0-9_-]", "_", thread_id)
       file.path(private$path, paste0(safe_id, ".json"))
+    },
+
+    # Collision-resistant sanitization: readable prefix + hash suffix
+    safe_thread_id = function(thread_id) {
+      sanitized <- gsub("[^a-zA-Z0-9_-]", "_", thread_id)
+      hash_suffix <- substr(rlang::hash(thread_id), 1, 8)
+      paste0(sanitized, "-", hash_suffix)
     },
 
     read_thread = function(thread_id) {
@@ -144,8 +152,27 @@ Checkpointer <- R6::R6Class(
       lines <- readLines(path, warn = FALSE)
       lines <- lines[nzchar(trimws(lines))]
       lapply(lines, function(l) {
-        jsonlite::fromJSON(l, simplifyVector = FALSE)
+        entry <- jsonlite::fromJSON(l, simplifyVector = FALSE)
+        private$check_schema_version(entry)
+        entry
       })
+    },
+
+    check_schema_version = function(entry) {
+      version <- entry[["_schema_version"]]
+      if (is.null(version)) {
+        rlang::warn(
+          "Reading checkpoint data without a schema version (old format).",
+          .frequency = "once",
+          .frequency_id = "orchestr_checkpoint_no_version"
+        )
+      } else if (version > 1L) {
+        rlang::warn(paste0(
+          "Checkpoint schema version ", version,
+          " is newer than supported version 1. ",
+          "Data may not be read correctly."
+        ))
+      }
     }
   )
 )

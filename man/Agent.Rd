@@ -36,6 +36,17 @@ An \code{Agent} R6 object.
 Preferred constructor for creating Agent objects. Wraps the
 \code{Agent} R6 class.
 }
+\section{Chat Protocol}{
+
+The \code{chat} object must implement these methods:
+\itemize{
+\item \code{$chat(prompt)} - Send a message and return the response text
+\item \code{$get_turns()} - Return the conversation history
+\item \code{$set_turns(turns)} - Replace the conversation history
+\item \code{$clone(deep = TRUE)} - Deep clone the chat object
+}
+}
+
 \examples{
 \dontrun{
 chat <- ellmer::chat_openai(model = "gpt-4o")

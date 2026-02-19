@@ -39,6 +39,7 @@ react_graph <- function(agent, max_iterations = 10L) {
 #'
 #' @param ... `Agent` objects, in execution order. If unnamed, node names
 #'   are auto-generated as `"step_1"`, `"step_2"`, etc.
+#' @param max_iterations Integer safety cap (default 100).
 #' @return A compiled \code{AgentGraph} object.
 #' @family convenience
 #' @export
@@ -49,7 +50,7 @@ react_graph <- function(agent, max_iterations = 10L) {
 #' graph <- pipeline_graph(agent("drafter", chat1), agent("reviewer", chat2))
 #' graph$invoke(list(messages = list("Write a poem")))
 #' }
-pipeline_graph <- function(...) {
+pipeline_graph <- function(..., max_iterations = 100L) {
   agents <- list(...)
   if (length(agents) == 0L) {
     rlang::abort("At least one agent is required.", call = NULL)
@@ -79,7 +80,7 @@ pipeline_graph <- function(...) {
   }
   gb$add_edge(nms[[length(nms)]], END)
   gb$set_entry_point(nms[[1L]])
-  gb$compile()
+  gb$compile(max_iterations = max_iterations)
 }
 
 #' Create a supervisor graph that routes to workers

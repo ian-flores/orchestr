@@ -7,6 +7,7 @@
 StateSchema <- R6::R6Class(
 
   "StateSchema",
+  lock_class = TRUE,
 
   public = list(
 

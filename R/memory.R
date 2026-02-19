@@ -3,10 +3,15 @@
 #' Key-value store with local (in-process) and file (JSON) backends.
 #' Use the [memory()] constructor function.
 #'
+#' @note The file backend is not concurrency-safe. If multiple R processes
+#'   access the same file, data loss may occur. Use the local backend for
+#'   concurrent access within a single process, or implement external file
+#'   locking.
 #' @keywords internal
 Memory <- R6::R6Class(
 
   "Memory",
+  lock_class = TRUE,
 
   public = list(
 
@@ -23,7 +28,10 @@ Memory <- R6::R6Class(
         }
         private$path <- path
         if (file.exists(path)) {
-          private$store <- jsonlite::read_json(path, simplifyVector = FALSE)
+          raw <- jsonlite::read_json(path, simplifyVector = FALSE)
+          private$check_schema_version(raw)
+          raw[["_schema_version"]] <- NULL
+          private$store <- raw
         } else {
           private$store <- list()
           private$persist()
@@ -108,12 +116,31 @@ Memory <- R6::R6Class(
 
     persist = function() {
       if (private$backend == "file") {
+        out <- private$store
+        out[["_schema_version"]] <- 1L
         jsonlite::write_json(
-          private$store,
+          out,
           private$path,
           auto_unbox = TRUE,
           pretty = TRUE
         )
+      }
+    },
+
+    check_schema_version = function(data) {
+      version <- data[["_schema_version"]]
+      if (is.null(version)) {
+        rlang::warn(
+          "Reading memory data without a schema version (old format).",
+          .frequency = "once",
+          .frequency_id = "orchestr_memory_no_version"
+        )
+      } else if (version > 1L) {
+        rlang::warn(paste0(
+          "Memory schema version ", version,
+          " is newer than supported version 1. ",
+          "Data may not be read correctly."
+        ))
       }
     }
   )

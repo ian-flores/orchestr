@@ -7,6 +7,7 @@
 GraphBuilder <- R6::R6Class(
 
   "GraphBuilder",
+  lock_class = TRUE,
 
   public = list(
 
@@ -242,11 +243,12 @@ GraphBuilder <- R6::R6Class(
     #' @description Print the builder
     #' @param ... Ignored.
     print = function(...) {
-      cat("<GraphBuilder>\n")
-      cat("  Nodes:", paste(names(private$nodes), collapse = ", "), "\n")
-      cat("  Entry:", private$entry %||% "(not set)", "\n")
-      cat("  Edges:", length(private$edges), "fixed,",
-          length(private$conditional_edges), "conditional\n")
+      cli::cli_h3("GraphBuilder")
+      cli::cli_ul()
+      cli::cli_li("Nodes: {paste(names(private$nodes), collapse = ', ')}")
+      cli::cli_li("Entry: {private$entry %||% '(not set)'}")
+      cli::cli_li("Edges: {length(private$edges)} fixed, {length(private$conditional_edges)} conditional")
+      cli::cli_end()
       invisible(self)
     }
   ),
@@ -303,7 +305,7 @@ GraphBuilder <- R6::R6Class(
 #' @examples
 #' g <- graph_builder()
 #' g$add_node("a", function(state, config) list(x = 1))
-#' g$add_edge("a", "__end__")
+#' g$add_edge("a", END)
 #' g$set_entry_point("a")
 graph_builder <- function(state_schema = NULL) {
   GraphBuilder$new(state_schema = state_schema)

@@ -8,7 +8,7 @@ test_that("graph_builder() creates a GraphBuilder", {
 test_that("add_node() accepts functions", {
   g <- graph_builder()
   g$add_node("a", function(state, config) list())
-  expect_output(print(g), "a")
+  expect_message(print(g), "a")
 })
 
 test_that("add_node() rejects duplicate names", {

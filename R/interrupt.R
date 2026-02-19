@@ -45,6 +45,7 @@ approval_tool <- function(prompt_fn = NULL) {
   prompt_fn <- prompt_fn %||% function(...) "Approve this action? (yes/no): "
 
   approve_fn <- function(action = "unspecified action") {
+    if (!interactive()) abort("approval_tool() requires an interactive R session", call = NULL)
     prompt_text <- prompt_fn(action)
     response <- readline(prompt = prompt_text)
     if (tolower(trimws(response)) %in% c("yes", "y")) {

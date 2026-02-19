@@ -114,3 +114,51 @@ test_that("file backend clear persists", {
 test_that("file backend requires path", {
   expect_error(memory(backend = "file"), "requires a `path`")
 })
+
+
+# ---- Schema versioning (S9) ----
+
+test_that("file backend writes _schema_version in JSON", {
+  tmp <- tempfile(fileext = ".json")
+  on.exit(unlink(tmp), add = TRUE)
+
+  mem <- memory(backend = "file", path = tmp)
+  mem$set("x", 42)
+
+  raw <- jsonlite::read_json(tmp, simplifyVector = FALSE)
+  expect_equal(raw[["_schema_version"]], 1L)
+})
+
+test_that("_schema_version is not exposed as a user key", {
+  tmp <- tempfile(fileext = ".json")
+  on.exit(unlink(tmp), add = TRUE)
+
+  mem <- memory(backend = "file", path = tmp)
+  mem$set("x", 42)
+
+  # Re-read from file
+  mem2 <- memory(backend = "file", path = tmp)
+  expect_false(mem2$has("_schema_version"))
+  expect_equal(mem2$keys(), "x")
+})
+
+test_that("reading old-format memory data warns about missing version", {
+  tmp <- tempfile(fileext = ".json")
+  on.exit(unlink(tmp), add = TRUE)
+
+  # Write JSON without _schema_version (simulating old format)
+  jsonlite::write_json(list(x = 1), tmp, auto_unbox = TRUE, pretty = TRUE)
+
+  expect_warning(
+    memory(backend = "file", path = tmp),
+    "without a schema version"
+  )
+})
+
+
+# ---- lock_class (S15) ----
+
+test_that("Memory class is locked", {
+  mem <- memory()
+  expect_error(mem$new_field <- 1, "locked")
+})

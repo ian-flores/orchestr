@@ -127,3 +127,69 @@ test_that("file backend isolates threads to separate files", {
   files <- list.files(tmp_dir, pattern = "\\.jsonl$")
   expect_length(files, 2)
 })
+
+
+# ---- thread_id collision resistance (S10) ----
+
+test_that("thread_ids that would collide under gsub get separate files", {
+  tmp_dir <- tempfile("cp_collision_")
+  on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
+
+  cp <- checkpointer(backend = "file", path = tmp_dir)
+  cp$save("a/b", "n1", list(x = 1))
+  cp$save("a_b", "n2", list(x = 2))
+
+  # They should produce different files because the hash suffix differs
+  files <- list.files(tmp_dir, pattern = "\\.jsonl$")
+  expect_length(files, 2)
+
+  r1 <- cp$load("a/b")
+  r2 <- cp$load("a_b")
+  expect_equal(r1$state$x, 1)
+  expect_equal(r2$state$x, 2)
+})
+
+
+# ---- Schema versioning (S9) ----
+
+test_that("file backend writes _schema_version in JSONL entries", {
+  tmp_dir <- tempfile("cp_ver_")
+  on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
+
+  cp <- checkpointer(backend = "file", path = tmp_dir)
+  cp$save("t1", "node_a", list(x = 1))
+
+  # Read raw file and check for version field
+  files <- list.files(tmp_dir, pattern = "\\.jsonl$", full.names = TRUE)
+  raw_line <- readLines(files[[1]], n = 1)
+  parsed <- jsonlite::fromJSON(raw_line, simplifyVector = FALSE)
+  expect_equal(parsed[["_schema_version"]], 1L)
+})
+
+test_that("reading old-format checkpoint data warns about missing version", {
+  tmp_dir <- tempfile("cp_oldver_")
+  on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
+  dir.create(tmp_dir, recursive = TRUE)
+
+  # Write a JSONL line WITHOUT _schema_version (simulating old format)
+  # Use the same filename scheme: safe_thread_id produces sanitized-hash
+  safe_id <- paste0("old_thread-", substr(rlang::hash("old_thread"), 1, 8))
+  jsonl_path <- file.path(tmp_dir, paste0(safe_id, ".jsonl"))
+  entry <- list(node = "n1", state = list(x = 1), timestamp = Sys.time())
+  cat(jsonlite::toJSON(entry, auto_unbox = TRUE), "\n",
+      file = jsonl_path, sep = "")
+
+  cp <- checkpointer(backend = "file", path = tmp_dir)
+  expect_warning(
+    cp$load("old_thread"),
+    "without a schema version"
+  )
+})
+
+
+# ---- lock_class (S15) ----
+
+test_that("Checkpointer class is locked", {
+  cp <- checkpointer()
+  expect_error(cp$new_field <- 1, "locked")
+})

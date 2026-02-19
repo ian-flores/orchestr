@@ -4,11 +4,13 @@
 \alias{pipeline_graph}
 \title{Create a sequential pipeline graph}
 \usage{
-pipeline_graph(...)
+pipeline_graph(..., max_iterations = 100L)
 }
 \arguments{
 \item{...}{\code{Agent} objects, in execution order. If unnamed, node names
 are auto-generated as \code{"step_1"}, \code{"step_2"}, etc.}
+
+\item{max_iterations}{Integer safety cap (default 100).}
 }
 \value{
 A compiled \code{AgentGraph} object.

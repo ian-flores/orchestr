@@ -238,3 +238,25 @@ test_that("invoke_turn also injects state context", {
   expect_match(user_prompt, "Context:")
   expect_match(user_prompt, "priority: high")
 })
+
+# ---- finalize ----
+
+test_that("finalize calls close without error", {
+  chat <- MockChat$new()
+  agent <- Agent$new(name = "finalizer", chat = chat)
+
+  # finalize is private (R6 >= 2.4.0 convention); delegates to close()
+  priv <- agent$.__enclos_env__$private
+  expect_no_error(priv$finalize())
+  # calling again is safe (close is idempotent)
+  expect_no_error(priv$finalize())
+})
+
+# ---- lock_class ----
+
+test_that("Agent class is locked (cannot add new fields)", {
+  chat <- MockChat$new()
+  agent <- Agent$new(name = "locked", chat = chat)
+
+  expect_error(agent$new_field <- "bad", "locked")
+})

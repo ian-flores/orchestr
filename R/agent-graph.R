@@ -7,6 +7,7 @@
 AgentGraph <- R6::R6Class(
 
   "AgentGraph",
+  lock_class = TRUE,
 
   public = list(
 
@@ -55,6 +56,11 @@ AgentGraph <- R6::R6Class(
     #'   graph-level default set at compile time.
     #' @return Final state as a named list
     invoke = function(state = list(), config = list(), verbose = private$.verbose) {
+      # Convenience: auto-wrap a plain string into messages state
+      if (is.character(state) && length(state) == 1L) {
+        state <- list(messages = list(state))
+      }
+
       # Try to resume from checkpoint
       current_node <- private$entry
       step <- 0L
@@ -129,9 +135,18 @@ AgentGraph <- R6::R6Class(
     #' @return List of `state_snapshot` objects
     stream = function(state = list(), config = list(), on_step = NULL,
                       verbose = private$.verbose) {
+      # Convenience: auto-wrap a plain string into messages state
+      if (is.character(state) && length(state) == 1L) {
+        state <- list(messages = list(state))
+      }
+
       current_node <- private$entry
       step <- 0L
-      snapshots <- list()
+
+      # Pre-allocate snapshot accumulator to avoid O(N^2) list growth
+      acc <- new.env(parent = emptyenv())
+      acc$snapshots <- vector("list", private$max_iterations)
+      acc$n <- 0L
 
       # Try to resume from checkpoint
       if (!is.null(private$checkpointer) && !is.null(config$thread_id)) {
@@ -178,7 +193,8 @@ AgentGraph <- R6::R6Class(
         }
 
         snap <- new_state_snapshot(state, current_node, step)
-        snapshots <- c(snapshots, list(snap))
+        acc$n <- acc$n + 1L
+        acc$snapshots[[acc$n]] <- snap
 
         if (is.function(on_step)) on_step(snap)
 
@@ -193,7 +209,7 @@ AgentGraph <- R6::R6Class(
         )
       }
 
-      snapshots
+      acc$snapshots[seq_len(acc$n)]
     },
 
     #' @description Generate a Mermaid diagram of the graph

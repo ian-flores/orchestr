@@ -176,3 +176,11 @@ test_that("merge_state_plain() does plain overwrite", {
   result <- merge_state_plain(current, updates)
   expect_equal(result, list(a = 1, b = 99, c = 3))
 })
+
+
+# ---- lock_class (S15) ----
+
+test_that("StateSchema class is locked", {
+  schema <- state_schema(x = "numeric")
+  expect_error(schema$new_field <- 1, "locked")
+})
