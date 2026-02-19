@@ -13,10 +13,11 @@ Defines typed fields with optional reducers for graph state management.
 Use the \code{\link[=state_schema]{state_schema()}} constructor function.
 }
 \keyword{internal}
-\section{Public fields}{
-\if{html}{\out{<div class="r6-fields">}}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{max_append}}{Maximum number of items to keep for append reducers.}
+\item{\code{max_append}}{Maximum number of items to keep for append reducers
+(read-only).}
 }
 \if{html}{\out{</div>}}
 }

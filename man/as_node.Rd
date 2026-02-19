@@ -19,3 +19,17 @@ A function suitable for use as a graph node handler.
 \description{
 Convert an Agent to a graph node handler function
 }
+\examples{
+\dontrun{
+chat <- ellmer::chat_openai(model = "gpt-4o")
+a <- agent("helper", chat)
+handler <- as_node(a)
+}
+}
+\seealso{
+Other node-helpers: 
+\code{\link{route_to}()},
+\code{\link{route_tool_calls}()},
+\code{\link{tool_node}()}
+}
+\concept{node-helpers}

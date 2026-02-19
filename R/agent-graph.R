@@ -133,6 +133,15 @@ AgentGraph <- R6::R6Class(
       step <- 0L
       snapshots <- list()
 
+      # Try to resume from checkpoint
+      if (!is.null(private$checkpointer) && !is.null(config$thread_id)) {
+        cp_data <- private$checkpointer$load(config$thread_id)
+        if (!is.null(cp_data)) {
+          state <- cp_data$state
+          current_node <- cp_data$node
+        }
+      }
+
       if (!is.null(config$resume_from)) {
         current_node <- config$resume_from$node
         state <- config$resume_from$state %||% state
@@ -143,6 +152,11 @@ AgentGraph <- R6::R6Class(
       while (step < private$max_iterations) {
         if (current_node == END) break
 
+        # Interrupt before
+        if (current_node %in% private$interrupt_before) {
+          private$signal_interrupt(state, current_node, step)
+        }
+
         if (verbose) {
           t0 <- proc.time()[[3L]]
           state <- private$run_node(current_node, state, config)
@@ -152,6 +166,16 @@ AgentGraph <- R6::R6Class(
           state <- private$run_node(current_node, state, config)
         }
         step <- step + 1L
+
+        # Checkpoint after node execution
+        if (!is.null(private$checkpointer) && !is.null(config$thread_id)) {
+          private$checkpointer$save(config$thread_id, current_node, state)
+        }
+
+        # Interrupt after
+        if (current_node %in% private$interrupt_after) {
+          private$signal_interrupt(state, current_node, step)
+        }
 
         snap <- new_state_snapshot(state, current_node, step)
         snapshots <- c(snapshots, list(snap))
@@ -254,17 +278,7 @@ AgentGraph <- R6::R6Class(
       handler <- private$nodes[[node_name]]
 
       result <- tryCatch(
-        {
-          if (inherits(handler, "Agent")) {
-            # Agent handler: extract last message, invoke, wrap response
-            msgs <- state$messages
-            last_msg <- if (length(msgs) > 0L) msgs[[length(msgs)]] else ""
-            response <- handler$invoke(last_msg, state = state)
-            list(messages = list(response))
-          } else {
-            handler(state, config)
-          }
-        },
+        handler(state, config),
         error = function(e) {
           rlang::abort(
             paste0("Error in node '", node_name, "': ", conditionMessage(e)),

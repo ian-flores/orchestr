@@ -16,3 +16,17 @@ A compiled \code{AgentGraph} object.
 \description{
 Chains agents in order: agent1 -> agent2 -> ... -> END.
 }
+\examples{
+\dontrun{
+chat1 <- ellmer::chat_openai(model = "gpt-4o")
+chat2 <- ellmer::chat_openai(model = "gpt-4o")
+graph <- pipeline_graph(agent("drafter", chat1), agent("reviewer", chat2))
+graph$invoke(list(messages = list("Write a poem")))
+}
+}
+\seealso{
+Other convenience: 
+\code{\link{react_graph}()},
+\code{\link{supervisor_graph}()}
+}
+\concept{convenience}

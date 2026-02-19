@@ -7,7 +7,12 @@
 #' @param node Character scalar. The node that triggered the interrupt.
 #' @param step Integer. The execution step number.
 #' @return An \code{agentgraph_interrupt} condition object.
+#' @family interrupts
 #' @export
+#' @examples
+#' cnd <- new_interrupt(list(x = 1), "review_node", 3L)
+#' cnd$node
+#' cnd$step
 new_interrupt <- function(state, node, step) {
   cnd(
     "agentgraph_interrupt",
@@ -28,7 +33,14 @@ new_interrupt <- function(state, node, step) {
 #'   returns a character string to display as the approval prompt. Defaults
 #'   to `"Approve this action? (yes/no): "`.
 #' @return An ellmer tool definition for human-in-the-loop approval.
+#' @family interrupts
 #' @export
+#' @examples
+#' \dontrun{
+#' tool <- approval_tool()
+#' chat <- ellmer::chat_openai(model = "gpt-4o")
+#' chat$register_tool(tool)
+#' }
 approval_tool <- function(prompt_fn = NULL) {
   prompt_fn <- prompt_fn %||% function(...) "Approve this action? (yes/no): "
 

@@ -257,15 +257,14 @@ test_that("format() returns string", {
 
 # ---- Dead-end detection ----
 
-test_that("node with no outgoing edge errors at runtime", {
+test_that("node with no outgoing edge errors at compile time", {
   g <- graph_builder()
   g$add_node("a", function(s, c) list(x = 1))
   g$add_node("b", function(s, c) list(x = 2))
   g$add_edge("a", "b")
   # b has no edge out
   g$set_entry_point("a")
-  ag <- suppressWarnings(g$compile())  # might warn about no path to END
-  expect_error(ag$invoke(list(x = 0)), "No edge found")
+  expect_error(g$compile(), "Dead-end nodes")
 })
 
 

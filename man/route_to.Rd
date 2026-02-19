@@ -15,3 +15,14 @@ A function that always returns the given node name.
 \description{
 Returns a condition function that always routes to the given node name.
 }
+\examples{
+router <- route_to("next_node")
+router(list())
+}
+\seealso{
+Other node-helpers: 
+\code{\link{as_node}()},
+\code{\link{route_tool_calls}()},
+\code{\link{tool_node}()}
+}
+\concept{node-helpers}

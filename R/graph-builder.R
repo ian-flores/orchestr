@@ -41,6 +41,9 @@ GraphBuilder <- R6::R6Class(
       if (!is.function(handler) && !inherits(handler, "Agent")) {
         rlang::abort("`handler` must be a function or an Agent object.", call = NULL)
       }
+      if (inherits(handler, "Agent")) {
+        handler <- as_node(handler)
+      }
       private$nodes[[name]] <- handler
       invisible(self)
     },
@@ -53,6 +56,14 @@ GraphBuilder <- R6::R6Class(
       private$check_name(from)
       if (!is.character(to) || length(to) != 1L) {
         rlang::abort("`to` must be a single character string.", call = NULL)
+      }
+      # Check for conflicting conditional edge
+      cond_sources <- vapply(private$conditional_edges, `[[`, character(1), "from")
+      if (from %in% cond_sources) {
+        rlang::abort(
+          paste0("Node '", from, "' already has a conditional edge; cannot add a fixed edge."),
+          call = NULL
+        )
       }
       private$edges <- c(private$edges, list(list(from = from, to = to)))
       invisible(self)
@@ -70,6 +81,14 @@ GraphBuilder <- R6::R6Class(
       }
       if (!is.list(mapping) || !rlang::is_named(mapping)) {
         rlang::abort("`mapping` must be a named list.", call = NULL)
+      }
+      # Check for conflicting fixed edge
+      fixed_sources <- vapply(private$edges, `[[`, character(1), "from")
+      if (from %in% fixed_sources) {
+        rlang::abort(
+          paste0("Node '", from, "' already has a fixed edge; cannot add a conditional edge."),
+          call = NULL
+        )
       }
       private$conditional_edges <- c(
         private$conditional_edges,
@@ -156,6 +175,46 @@ GraphBuilder <- R6::R6Class(
         }
       }
 
+      # Validate dead-end nodes: every non-END node must have an outgoing edge
+      fixed_sources <- vapply(private$edges, `[[`, character(1), "from")
+      cond_sources <- vapply(
+        private$conditional_edges, `[[`, character(1), "from"
+      )
+      has_outgoing <- union(fixed_sources, cond_sources)
+      dead_ends <- setdiff(all_node_names, has_outgoing)
+      if (length(dead_ends) > 0L) {
+        rlang::abort(
+          paste0(
+            "Dead-end nodes with no outgoing edge: ",
+            paste(dead_ends, collapse = ", "),
+            ". Add an edge from each or route to END."
+          ),
+          call = NULL
+        )
+      }
+
+      # Validate interrupt node names reference actual nodes
+      bad_before <- setdiff(private$interrupt_before, all_node_names)
+      if (length(bad_before) > 0L) {
+        rlang::abort(
+          paste0(
+            "interrupt_before references unknown nodes: ",
+            paste(bad_before, collapse = ", ")
+          ),
+          call = NULL
+        )
+      }
+      bad_after <- setdiff(private$interrupt_after, all_node_names)
+      if (length(bad_after) > 0L) {
+        rlang::abort(
+          paste0(
+            "interrupt_after references unknown nodes: ",
+            paste(bad_after, collapse = ", ")
+          ),
+          call = NULL
+        )
+      }
+
       # Build adjacency for reachability check
       adj <- private$build_adjacency()
       reachable <- private$find_reachable(private$entry, adj)
@@ -239,6 +298,7 @@ GraphBuilder <- R6::R6Class(
 #'
 #' @param state_schema Optional `StateSchema` for typed state with reducers.
 #' @return A `GraphBuilder` R6 object.
+#' @family graph-building
 #' @export
 #' @examples
 #' g <- graph_builder()

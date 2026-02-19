@@ -10,9 +10,6 @@ StateSchema <- R6::R6Class(
 
   public = list(
 
-    #' @field max_append Maximum number of items to keep for append reducers.
-    max_append = Inf,
-
     #' @description Create a new StateSchema
     #' @param ... Named type specifications. Each value is a string like
     #'   `"append:list"`, `"any"`, `"logical"`, `"numeric"`, `"character"`,
@@ -31,7 +28,7 @@ StateSchema <- R6::R6Class(
       }
       parsed <- lapply(specs, private$parse_spec)
       private$fields <- parsed
-      self$max_append <- .max_append
+      private$.max_append <- .max_append
     },
 
     #' @description Validate a set of updates against the schema
@@ -75,9 +72,9 @@ StateSchema <- R6::R6Class(
         if (spec$reducer == "append") {
           existing <- result[[nm]] %||% list()
           combined <- c(existing, updates[[nm]])
-          if (length(combined) > self$max_append) {
+          if (length(combined) > private$.max_append) {
             combined <- combined[seq(
-              max(1L, length(combined) - self$max_append + 1L),
+              max(1L, length(combined) - private$.max_append + 1L),
               length(combined)
             )]
           }
@@ -96,8 +93,15 @@ StateSchema <- R6::R6Class(
     }
   ),
 
+  active = list(
+    #' @field max_append Maximum number of items to keep for append reducers
+    #'   (read-only).
+    max_append = function() private$.max_append
+  ),
+
   private = list(
     fields = NULL,
+    .max_append = Inf,
 
     parse_spec = function(spec) {
       if (!is.character(spec) || length(spec) != 1L) {
@@ -139,6 +143,7 @@ StateSchema <- R6::R6Class(
 #'   Defaults to `Inf` (no limit). When the limit is exceeded, only the most
 #'   recent items are kept.
 #' @return A \code{StateSchema} R6 object.
+#' @family graph-building
 #' @export
 #' @examples
 #' schema <- state_schema(messages = "append:list", done = "logical")

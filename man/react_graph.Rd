@@ -4,13 +4,10 @@
 \alias{react_graph}
 \title{Create a ReAct (Reasoning + Acting) agent graph}
 \usage{
-react_graph(agent, tools = list(), max_iterations = 10L)
+react_graph(agent, max_iterations = 10L)
 }
 \arguments{
 \item{agent}{An \code{Agent} object.}
-
-\item{tools}{Named list of tool definitions to register on the agent. These
-are registered via \code{agent$register_tools()} before graph compilation.}
 
 \item{max_iterations}{Integer safety cap.}
 }
@@ -22,3 +19,25 @@ Builds a single-agent graph with state management and checkpointing.
 Tool calling is handled internally by ellmer's \code{Chat} class during
 \verb{$chat()}, so no separate tool dispatch node is needed.
 }
+\details{
+Tools should be registered on the agent at construction time via
+\code{agent(tools = ...)} rather than passed here.
+}
+\examples{
+\dontrun{
+chat <- ellmer::chat_openai(model = "gpt-4o")
+a <- agent("assistant", chat)
+graph <- react_graph(a)
+graph$invoke(list(messages = list("Hello")))
+}
+}
+\seealso{
+Other agents: 
+\code{\link{agent}()}
+
+Other convenience: 
+\code{\link{pipeline_graph}()},
+\code{\link{supervisor_graph}()}
+}
+\concept{agents}
+\concept{convenience}

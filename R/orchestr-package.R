@@ -7,6 +7,7 @@
 #' @importFrom R6 R6Class
 #' @importFrom jsonlite toJSON fromJSON read_json write_json
 #' @importFrom methods is
+#' @importFrom stats setNames
 NULL
 
 #' End sentinel for graph execution
@@ -14,5 +15,6 @@ NULL
 #' Use `END` as a target node name to indicate that graph execution should
 #' stop after the current node.
 #'
+#' @family graph-building
 #' @export
 END <- "__end__"

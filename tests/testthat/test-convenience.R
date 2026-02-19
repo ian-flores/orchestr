@@ -108,8 +108,8 @@ test_that("supervisor_graph() builds a graph with correct nodes", {
   expect_true("worker1" %in% ag$get_nodes())
 })
 
-test_that("supervisor_graph() injects routing system prompt", {
-  sup_chat <- MockChat$new(responses = list("done"))
+test_that("supervisor_graph() does not mutate the original supervisor chat", {
+  sup_chat <- MockChat$new(responses = list("done"), system_prompt = "original")
   supervisor <- Agent$new(name = "sup", chat = sup_chat)
   workers <- list(
     coder = Agent$new(name = "c", chat = MockChat$new()),
@@ -117,10 +117,9 @@ test_that("supervisor_graph() injects routing system prompt", {
   )
 
   ag <- supervisor_graph(supervisor, workers)
-  sp <- sup_chat$get_system_prompt()
-  expect_match(sp, "coder")
-  expect_match(sp, "writer")
-  expect_match(sp, "FINISH")
+  # Original chat should be untouched
+  expect_equal(sup_chat$get_system_prompt(), "original")
+  expect_length(mock_chat_tools(sup_chat), 0L)
 })
 
 test_that("supervisor_graph() defaults to FINISH when route tool not called", {
@@ -135,15 +134,18 @@ test_that("supervisor_graph() defaults to FINISH when route tool not called", {
   expect_equal(result$next_worker, "FINISH")
 })
 
-test_that("supervisor_graph() registers route tool on supervisor chat", {
-  sup_chat <- MockChat$new(responses = list("thinking"))
+test_that("supervisor_graph() executes using cloned chat with routing", {
+  sup_chat <- MockChat$new(responses = list("routing decision"))
   supervisor <- Agent$new(name = "sup", chat = sup_chat)
   workers <- list(w1 = Agent$new(name = "w1", chat = MockChat$new()))
 
   ag <- supervisor_graph(supervisor, workers)
-  # Route tool is registered ONCE during graph construction (not during invoke)
+  # Original chat should have no tools registered (clone was modified instead)
   tools <- mock_chat_tools(sup_chat)
-  expect_true(length(tools) > 0L)
+  expect_length(tools, 0L)
+  # Graph should still be functional (clone has the route tool)
+  result <- ag$invoke(list(messages = list("start")))
+  expect_true(is.list(result))
 })
 
 test_that("supervisor_graph() rejects invalid args", {

@@ -14,4 +14,10 @@ END
 Use \code{END} as a target node name to indicate that graph execution should
 stop after the current node.
 }
+\seealso{
+Other graph-building: 
+\code{\link{graph_builder}()},
+\code{\link{state_schema}()}
+}
+\concept{graph-building}
 \keyword{datasets}

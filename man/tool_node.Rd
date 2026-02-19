@@ -21,3 +21,16 @@ When using \code{\link[=agent]{Agent}} objects with ellmer, tool calling is hand
 internally by ellmer's Chat class. See \code{\link{react_graph}} for the
 recommended pattern.
 }
+\examples{
+\dontrun{
+tools <- list(add = function(a, b) a + b)
+handler <- tool_node(tools)
+}
+}
+\seealso{
+Other node-helpers: 
+\code{\link{as_node}()},
+\code{\link{route_to}()},
+\code{\link{route_tool_calls}()}
+}
+\concept{node-helpers}

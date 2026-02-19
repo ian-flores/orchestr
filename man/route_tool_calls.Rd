@@ -21,3 +21,14 @@ When using \code{\link[=agent]{Agent}} objects with ellmer, tool calling is hand
 internally by ellmer's Chat class. See \code{\link{react_graph}} for the
 recommended pattern.
 }
+\examples{
+route_tool_calls(list(pending_tool_calls = list()))
+route_tool_calls(list(pending_tool_calls = list(list(name = "add"))))
+}
+\seealso{
+Other node-helpers: 
+\code{\link{as_node}()},
+\code{\link{route_to}()},
+\code{\link{tool_node}()}
+}
+\concept{node-helpers}

@@ -124,6 +124,6 @@ test_that("file backend isolates threads to separate files", {
   cp$save("thread-A", "n1", list(a = 1))
   cp$save("thread-B", "n2", list(b = 2))
 
-  files <- list.files(tmp_dir, pattern = "\\.json$")
+  files <- list.files(tmp_dir, pattern = "\\.jsonl$")
   expect_length(files, 2)
 })

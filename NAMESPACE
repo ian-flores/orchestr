@@ -2,7 +2,6 @@
 
 S3method(format,state_snapshot)
 S3method(print,state_snapshot)
-export(Agent)
 export(END)
 export(agent)
 export(approval_tool)
@@ -40,3 +39,4 @@ importFrom(rlang,is_installed)
 importFrom(rlang,is_named)
 importFrom(rlang,signal)
 importFrom(rlang,warn)
+importFrom(stats,setNames)

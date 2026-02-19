@@ -4,18 +4,26 @@
 #' Tool calling is handled internally by ellmer's `Chat` class during
 #' `$chat()`, so no separate tool dispatch node is needed.
 #'
+#' Tools should be registered on the agent at construction time via
+#' `agent(tools = ...)` rather than passed here.
+#'
 #' @param agent An `Agent` object.
-#' @param tools Named list of tool definitions to register on the agent. These
-#'   are registered via `agent$register_tools()` before graph compilation.
 #' @param max_iterations Integer safety cap.
 #' @return A compiled \code{AgentGraph} object.
+#' @family agents
+#' @family convenience
 #' @export
-react_graph <- function(agent, tools = list(), max_iterations = 10L) {
+#' @examples
+#' \dontrun{
+#' chat <- ellmer::chat_openai(model = "gpt-4o")
+#' a <- agent("assistant", chat)
+#' graph <- react_graph(a)
+#' graph$invoke(list(messages = list("Hello")))
+#' }
+react_graph <- function(agent, max_iterations = 10L) {
   if (!inherits(agent, "Agent")) {
     rlang::abort("`agent` must be an Agent object.", call = NULL)
   }
-  # Register any additional tools on the agent
-  if (length(tools) > 0L) agent$register_tools(tools)
 
   schema <- state_schema(messages = "append:list")
   gb <- graph_builder(state_schema = schema)
@@ -32,7 +40,15 @@ react_graph <- function(agent, tools = list(), max_iterations = 10L) {
 #' @param ... `Agent` objects, in execution order. If unnamed, node names
 #'   are auto-generated as `"step_1"`, `"step_2"`, etc.
 #' @return A compiled \code{AgentGraph} object.
+#' @family convenience
 #' @export
+#' @examples
+#' \dontrun{
+#' chat1 <- ellmer::chat_openai(model = "gpt-4o")
+#' chat2 <- ellmer::chat_openai(model = "gpt-4o")
+#' graph <- pipeline_graph(agent("drafter", chat1), agent("reviewer", chat2))
+#' graph$invoke(list(messages = list("Write a poem")))
+#' }
 pipeline_graph <- function(...) {
   agents <- list(...)
   if (length(agents) == 0L) {
@@ -80,7 +96,15 @@ pipeline_graph <- function(...) {
 #' @param workers Named list of `Agent` objects.
 #' @param max_iterations Integer safety cap (default 50).
 #' @return A compiled \code{AgentGraph} object.
+#' @family convenience
 #' @export
+#' @examples
+#' \dontrun{
+#' sup <- agent("boss", ellmer::chat_openai(model = "gpt-4o"))
+#' w1 <- agent("coder", ellmer::chat_openai(model = "gpt-4o"))
+#' w2 <- agent("tester", ellmer::chat_openai(model = "gpt-4o"))
+#' graph <- supervisor_graph(sup, list(coder = w1, tester = w2))
+#' }
 supervisor_graph <- function(supervisor, workers, max_iterations = 50L) {
   if (!inherits(supervisor, "Agent")) {
     rlang::abort("`supervisor` must be an Agent object.", call = NULL)
@@ -97,8 +121,8 @@ supervisor_graph <- function(supervisor, workers, max_iterations = 50L) {
   worker_names <- names(workers)
   valid_targets <- c(worker_names, "FINISH")
 
-  # Inject routing tool + system prompt into the supervisor's Chat
-  chat <- supervisor$get_chat()
+  # Clone the chat to avoid mutating the supervisor's original Chat
+  chat <- supervisor$get_chat()$clone(deep = TRUE)
   existing_sp <- chat$get_system_prompt() %||% ""
   routing_sp <- paste0(
     existing_sp,
@@ -155,7 +179,7 @@ supervisor_graph <- function(supervisor, workers, max_iterations = 50L) {
   gb <- graph_builder(state_schema = schema)
   gb$add_node("supervisor", sup_node)
 
-  mapping <- as.list(stats::setNames(worker_names, worker_names))
+  mapping <- as.list(setNames(worker_names, worker_names))
   mapping[["FINISH"]] <- END
 
   route_fn <- function(state) {

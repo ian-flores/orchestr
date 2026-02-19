@@ -72,6 +72,7 @@ test_that("compile() warns about unreachable nodes", {
   g$add_node("a", function(s, c) list())
   g$add_node("orphan", function(s, c) list())
   g$add_edge("a", "__end__")
+  g$add_edge("orphan", "__end__")
   g$set_entry_point("a")
   expect_warning(g$compile(), "Unreachable")
 })

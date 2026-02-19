@@ -26,3 +26,17 @@ The supervisor node sets \code{state$next_worker} via a routing tool that the
 supervisor calls. The routing condition reads this field to dispatch to the
 correct worker, or end the graph if the supervisor calls \code{route("FINISH")}.
 }
+\examples{
+\dontrun{
+sup <- agent("boss", ellmer::chat_openai(model = "gpt-4o"))
+w1 <- agent("coder", ellmer::chat_openai(model = "gpt-4o"))
+w2 <- agent("tester", ellmer::chat_openai(model = "gpt-4o"))
+graph <- supervisor_graph(sup, list(coder = w1, tester = w2))
+}
+}
+\seealso{
+Other convenience: 
+\code{\link{pipeline_graph}()},
+\code{\link{react_graph}()}
+}
+\concept{convenience}

@@ -21,3 +21,9 @@ g$add_node("a", function(state, config) list(x = 1))
 g$add_edge("a", "__end__")
 g$set_entry_point("a")
 }
+\seealso{
+Other graph-building: 
+\code{\link{END}},
+\code{\link{state_schema}()}
+}
+\concept{graph-building}

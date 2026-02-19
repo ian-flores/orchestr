@@ -23,3 +23,8 @@ cp <- checkpointer()
 cp$save("thread-1", "node_a", list(x = 1))
 cp$load("thread-1")
 }
+\seealso{
+Other persistence: 
+\code{\link{memory}()}
+}
+\concept{persistence}

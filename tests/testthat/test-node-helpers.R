@@ -73,14 +73,17 @@ test_that("tool_node() handles empty pending_tool_calls", {
   expect_equal(result$pending_tool_calls, list())
 })
 
-test_that("tool_node() skips unknown tools", {
+test_that("tool_node() warns on unknown tools", {
   handler <- tool_node(list(known = identity))
   state <- list(
     pending_tool_calls = list(
       list(id = "tc1", name = "unknown_tool", args = list())
     )
   )
-  result <- handler(state, list())
+  expect_warning(
+    result <- handler(state, list()),
+    "Unknown tool 'unknown_tool'"
+  )
   expect_equal(result$tool_results, list())
 })
 

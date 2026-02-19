@@ -26,3 +26,8 @@ mem <- memory()
 mem$set("foo", 42)
 mem$get("foo")
 }
+\seealso{
+Other persistence: 
+\code{\link{checkpointer}()}
+}
+\concept{persistence}

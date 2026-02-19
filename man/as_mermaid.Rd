@@ -17,3 +17,11 @@ A character string containing a Mermaid diagram definition.
 Generates a \href{https://mermaid.js.org/}{Mermaid} flowchart string from an
 \code{AgentGraph} object. Useful for documentation and debugging.
 }
+\examples{
+g <- graph_builder()
+g$add_node("a", function(state, config) list())
+g$add_edge("a", "__end__")
+g$set_entry_point("a")
+graph <- g$compile()
+cat(as_mermaid(graph))
+}

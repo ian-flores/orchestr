@@ -20,3 +20,13 @@ An \code{agentgraph_interrupt} condition object.
 Creates a condition of class \code{agentgraph_interrupt} that can be signalled
 to pause graph execution for human review.
 }
+\examples{
+cnd <- new_interrupt(list(x = 1), "review_node", 3L)
+cnd$node
+cnd$step
+}
+\seealso{
+Other interrupts: 
+\code{\link{approval_tool}()}
+}
+\concept{interrupts}

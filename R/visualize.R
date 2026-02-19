@@ -7,6 +7,13 @@
 #'   methods.
 #' @return A character string containing a Mermaid diagram definition.
 #' @export
+#' @examples
+#' g <- graph_builder()
+#' g$add_node("a", function(state, config) list())
+#' g$add_edge("a", "__end__")
+#' g$set_entry_point("a")
+#' graph <- g$compile()
+#' cat(as_mermaid(graph))
 as_mermaid <- function(graph) {
   nodes <- graph$get_nodes()
   raw_edges <- graph$get_edges()

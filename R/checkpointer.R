@@ -3,9 +3,9 @@
 #' Persists graph execution state for workflow resumption.
 #' Use the [checkpointer()] constructor function.
 #'
-#' @note The file backend uses non-atomic read-modify-write operations and is
-#'   not safe for concurrent multi-process access. Use the memory backend for
-#'   concurrent use within a single R process.
+#' @note The file backend uses append-only JSONL (JSON Lines) files. It is not
+#'   safe for concurrent multi-process access to the same thread. Use the memory
+#'   backend for concurrent use within a single R process.
 #' @keywords internal
 Checkpointer <- R6::R6Class(
 
@@ -60,11 +60,10 @@ Checkpointer <- R6::R6Class(
         }
         private$store[[thread_id]] <- c(private$store[[thread_id]], list(entry))
       } else {
-        # File backend: read existing, append, write back
+        # File backend: append one JSON line (JSONL format)
         thread_file <- private$thread_path(thread_id)
-        existing <- private$read_thread(thread_file)
-        existing <- c(existing, list(entry))
-        private$write_thread(thread_file, existing)
+        line <- jsonlite::toJSON(entry, auto_unbox = TRUE)
+        cat(line, "\n", file = thread_file, sep = "", append = TRUE)
       }
 
       invisible(self)
@@ -111,31 +110,42 @@ Checkpointer <- R6::R6Class(
       if (private$backend == "memory") {
         private$store[[thread_id]] %||% list()
       } else {
-        thread_file <- private$thread_path(thread_id)
-        private$read_thread(thread_file)
+        private$read_thread(thread_id)
       }
     },
 
     thread_path = function(thread_id) {
       # Sanitize thread_id for use as filename
       safe_id <- gsub("[^a-zA-Z0-9_-]", "_", thread_id)
+      file.path(private$path, paste0(safe_id, ".jsonl"))
+    },
+
+    # Backward-compat path for old .json files
+    legacy_thread_path = function(thread_id) {
+      safe_id <- gsub("[^a-zA-Z0-9_-]", "_", thread_id)
       file.path(private$path, paste0(safe_id, ".json"))
     },
 
-    read_thread = function(path) {
-      if (!file.exists(path)) {
-        return(list())
+    read_thread = function(thread_id) {
+      jsonl_path <- private$thread_path(thread_id)
+      json_path <- private$legacy_thread_path(thread_id)
+
+      if (file.exists(jsonl_path)) {
+        private$read_jsonl(jsonl_path)
+      } else if (file.exists(json_path)) {
+        # Backward compat: read old JSON array format
+        jsonlite::read_json(json_path, simplifyVector = FALSE)
+      } else {
+        list()
       }
-      jsonlite::read_json(path, simplifyVector = FALSE)
     },
 
-    write_thread = function(path, snapshots) {
-      jsonlite::write_json(
-        snapshots,
-        path,
-        auto_unbox = TRUE,
-        pretty = TRUE
-      )
+    read_jsonl = function(path) {
+      lines <- readLines(path, warn = FALSE)
+      lines <- lines[nzchar(trimws(lines))]
+      lapply(lines, function(l) {
+        jsonlite::fromJSON(l, simplifyVector = FALSE)
+      })
     }
   )
 )
@@ -148,6 +158,7 @@ Checkpointer <- R6::R6Class(
 #'   files).
 #' @param path Directory path for the file backend.
 #' @return A \code{Checkpointer} R6 object.
+#' @family persistence
 #' @export
 #' @examples
 #' cp <- checkpointer()

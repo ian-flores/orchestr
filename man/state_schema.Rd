@@ -27,3 +27,9 @@ schema <- state_schema(messages = "append:list", done = "logical")
 schema$validate(list(done = TRUE))
 schema$merge(list(messages = list("a")), list(messages = list("b")))
 }
+\seealso{
+Other graph-building: 
+\code{\link{END}},
+\code{\link{graph_builder}()}
+}
+\concept{graph-building}

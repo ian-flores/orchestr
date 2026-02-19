@@ -126,6 +126,7 @@ Memory <- R6::R6Class(
 #' @note The \code{path} parameter for file backends should be a trusted value.
 #'   Do not derive it from LLM output or untrusted user input.
 #' @return A \code{Memory} R6 object.
+#' @family persistence
 #' @export
 #' @examples
 #' mem <- memory()

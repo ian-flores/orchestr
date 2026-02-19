@@ -2,7 +2,6 @@
 % Please edit documentation in R/agent.R
 \name{agent}
 \alias{agent}
-\alias{Agent}
 \title{Create an Agent}
 \usage{
 agent(
@@ -37,3 +36,15 @@ An \code{Agent} R6 object.
 Preferred constructor for creating Agent objects. Wraps the
 \code{Agent} R6 class.
 }
+\examples{
+\dontrun{
+chat <- ellmer::chat_openai(model = "gpt-4o")
+a <- agent("researcher", chat)
+a$invoke("What is R?")
+}
+}
+\seealso{
+Other agents: 
+\code{\link{react_graph}()}
+}
+\concept{agents}

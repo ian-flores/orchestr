@@ -5,7 +5,6 @@
 #' and secure code execution via securer. Use [agent()] to create instances.
 #'
 #' @keywords internal
-#' @export
 Agent <- R6::R6Class(
   "Agent",
   public = list(
@@ -32,6 +31,20 @@ Agent <- R6::R6Class(
             !nzchar(name)) {
         abort("`name` must be a non-empty string.", call = NULL)
       }
+
+      required_methods <- c("chat", "get_turns", "set_turns", "clone")
+      missing <- setdiff(required_methods, names(chat))
+      if (length(missing) > 0L) {
+        abort(
+          paste0(
+            "`chat` must be a chat object with methods: ",
+            paste(required_methods, collapse = ", "), ". ",
+            "Missing: ", paste(missing, collapse = ", "), "."
+          ),
+          call = NULL
+        )
+      }
+
       private$.name <- name
       private$.secure <- secure
       private$.sandbox <- sandbox
@@ -105,7 +118,7 @@ Agent <- R6::R6Class(
       Agent$new(
         name = private$.name,
         chat = cloned_chat,
-        tools = list(),
+        tools = private$.tools,
         system_prompt = NULL,
         secure = private$.secure,
         sandbox = private$.sandbox,
@@ -135,6 +148,13 @@ Agent <- R6::R6Class(
       cli::cli_end()
       invisible(self)
     }
+  ),
+
+  active = list(
+    #' @field name Read-only agent name.
+    name = function() private$.name,
+    #' @field secure Read-only secure flag.
+    secure = function() private$.secure
   ),
 
   private = list(
@@ -187,7 +207,6 @@ Agent <- R6::R6Class(
 #' Preferred constructor for creating Agent objects. Wraps the
 #' \code{Agent} R6 class.
 #'
-#' @aliases Agent
 #' @param name Character string identifying this agent.
 #' @param chat An ellmer::Chat object.
 #' @param tools List of tool objects.
@@ -196,7 +215,14 @@ Agent <- R6::R6Class(
 #' @param sandbox Logical; enable OS sandbox when secure is TRUE.
 #' @param memory Optional Memory object.
 #' @return An \code{Agent} R6 object.
+#' @family agents
 #' @export
+#' @examples
+#' \dontrun{
+#' chat <- ellmer::chat_openai(model = "gpt-4o")
+#' a <- agent("researcher", chat)
+#' a$invoke("What is R?")
+#' }
 agent <- function(name, chat, tools = list(), system_prompt = NULL,
                   secure = FALSE, sandbox = TRUE, memory = NULL) {
   Agent$new(name = name, chat = chat, tools = tools,

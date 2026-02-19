@@ -19,3 +19,15 @@ Returns an \code{\link[ellmer:tool]{ellmer::tool()}} definition that prompts a h
 via \code{\link[=readline]{readline()}}. If approved, returns \code{"approved"}. If rejected, calls
 \code{\link[ellmer:tool_reject]{ellmer::tool_reject()}} to signal rejection to the LLM.
 }
+\examples{
+\dontrun{
+tool <- approval_tool()
+chat <- ellmer::chat_openai(model = "gpt-4o")
+chat$register_tool(tool)
+}
+}
+\seealso{
+Other interrupts: 
+\code{\link{new_interrupt}()}
+}
+\concept{interrupts}
