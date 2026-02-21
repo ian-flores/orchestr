@@ -11,7 +11,8 @@ Description: Graph-based multi-agent workflow orchestration built on
     memory, and checkpointing. Convenience constructors cover common
     patterns: ReAct loops, sequential pipelines, and supervisor routing.
 License: MIT + file LICENSE
-URL: https://github.com/ian-flores/orchestr
+URL: https://github.com/ian-flores/orchestr,
+    https://ian-flores.github.io/orchestr/
 BugReports: https://github.com/ian-flores/orchestr/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
