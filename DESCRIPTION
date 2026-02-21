@@ -29,5 +29,7 @@ Suggests:
     securer (>= 0.1.0),
     testthat (>= 3.0.0),
     withr
+Remotes:
+    ian-flores/securer
 Config/testthat/edition: 3
 VignetteBuilder: knitr
