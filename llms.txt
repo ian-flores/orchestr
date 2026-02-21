@@ -1,0 +1,217 @@
+# orchestr
+
+> \[!CAUTION\] **Alpha software.** This package is part of a broader
+> effort by [Ian Flores Siaca](https://github.com/ian-flores) to develop
+> proper AI infrastructure for the R ecosystem. It is under active
+> development and should **not** be used in production until an official
+> release is published. APIs may change without notice.
+
+Graph-based multi-agent workflow orchestration for R. Built on
+[ellmer](https://github.com/tidyverse/ellmer) for LLM chat and
+optionally [securer](https://github.com/ian-flores/securer) for
+sandboxed code execution.
+
+## Installation
+
+``` r
+# install.packages("remotes")
+remotes::install_github("ian-flores/orchestr")
+```
+
+## Setup
+
+orchestr uses [ellmer](https://github.com/tidyverse/ellmer) for LLM
+access. You’ll need an API key for your chosen provider:
+
+``` r
+# For Anthropic (Claude)
+Sys.setenv(ANTHROPIC_API_KEY = "your-key-here")
+
+# For OpenAI
+Sys.setenv(OPENAI_API_KEY = "your-key-here")
+```
+
+See ellmer’s documentation for all supported providers.
+
+## Features
+
+- **Agent** – wraps an ellmer Chat with tools and optional secure
+  execution
+- **GraphBuilder** – fluent API for constructing agent graphs with typed
+  state
+- **Conditional routing** – route between agents based on state
+- **Human-in-the-loop** – interrupt graph execution for human approval
+- **State management** – typed state schemas with reducers, snapshots
+- **Memory & checkpointing** – persist state across invocations
+- **Visualization** – render graphs as Mermaid diagrams
+
+## Quick Start
+
+### Single Agent (ReAct)
+
+The
+[`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md)
+function wraps a single agent with state management and checkpointing.
+ellmer’s `Chat` class handles tool call loops internally – when an agent
+has registered tools, they are executed automatically during `$chat()`.
+The graph wraps this with state management and checkpointing.
+
+``` r
+library(orchestr)
+library(ellmer)
+
+analyst <- agent("analyst", chat = chat_anthropic(
+  system_prompt = "You analyze data. Use your tools to compute results."
+))
+graph <- react_graph(analyst, max_iterations = 5)
+result <- graph$invoke(list(messages = list("What is the mean of c(1,2,3,4,5)?")))
+```
+
+### Agent Pipeline
+
+[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md)
+chains agents in sequence. Each agent processes the state and passes it
+to the next. One LLM call per agent in the pipeline.
+
+``` r
+drafter <- agent("drafter", chat = chat_anthropic(
+  system_prompt = "Write a short draft on the given topic."
+))
+
+editor <- agent("editor", chat = chat_anthropic(
+  system_prompt = "Improve the following draft."
+))
+
+pipeline <- pipeline_graph(drafter, editor)
+result <- pipeline$invoke(list(messages = list("Benefits of open source.")))
+```
+
+### Supervisor Routing
+
+[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/supervisor_graph.md)
+creates a supervisor that routes tasks to specialized workers. The
+supervisor decides which worker to invoke (or to finish) by calling an
+automatically injected `route` tool.
+
+``` r
+supervisor <- agent("supervisor", chat = chat_anthropic(
+  system_prompt = "You coordinate workers to solve tasks."
+))
+
+math_worker <- agent("math", chat = chat_anthropic(
+  system_prompt = "You are a math expert. Solve math problems step by step."
+))
+
+writing_worker <- agent("writing", chat = chat_anthropic(
+  system_prompt = "You are a writing expert. Help with writing tasks."
+))
+
+graph <- supervisor_graph(
+  supervisor = supervisor,
+  workers = list(math = math_worker, writing = writing_worker),
+  max_iterations = 10
+)
+result <- graph$invoke(list(messages = list("Calculate the integral of x^2 from 0 to 1.")))
+```
+
+## Cost Awareness
+
+Each node in a graph that calls an LLM makes an API request. Be mindful
+of costs:
+
+- [`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md):
+  The agent runs once, with ellmer handling any tool calls internally
+- [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md):
+  One LLM call per agent in the pipeline
+- `supervisor_graph(max_iterations = 50)`: Up to 50+ LLM calls
+  (supervisor routing + worker execution). Start with low
+  `max_iterations` values
+- Use `verbose = TRUE` when compiling graphs to see execution flow:
+  `compile(verbose = TRUE)`
+
+## Documentation
+
+- [Getting
+  Started](https://ian-flores.github.io/orchestr/articles/quickstart.html)
+- [Multi-Agent
+  Workflows](https://ian-flores.github.io/orchestr/articles/multi-agent.html)
+- [Secure
+  Execution](https://ian-flores.github.io/orchestr/articles/securer.html)
+
+## License
+
+MIT
+
+# Package index
+
+## Agent
+
+- [`agent()`](https://ian-flores.github.io/orchestr/reference/Agent.md)
+  : Create an Agent
+
+## Graph Construction
+
+- [`graph_builder()`](https://ian-flores.github.io/orchestr/reference/graph_builder.md)
+  : Create a graph builder
+- [`END`](https://ian-flores.github.io/orchestr/reference/END.md) : End
+  sentinel for graph execution
+
+## State
+
+- [`state_schema()`](https://ian-flores.github.io/orchestr/reference/state_schema.md)
+  : Create a typed state schema
+- [`new_state_snapshot()`](https://ian-flores.github.io/orchestr/reference/new_state_snapshot.md)
+  : Create a state snapshot
+
+## Node Helpers
+
+- [`as_node()`](https://ian-flores.github.io/orchestr/reference/as_node.md)
+  : Convert an Agent to a graph node handler function
+- [`tool_node()`](https://ian-flores.github.io/orchestr/reference/tool_node.md)
+  : Create a tool execution node
+- [`route_tool_calls()`](https://ian-flores.github.io/orchestr/reference/route_tool_calls.md)
+  : Route based on pending tool calls
+- [`route_to()`](https://ian-flores.github.io/orchestr/reference/route_to.md)
+  : Create a constant router
+
+## Convenience Graphs
+
+- [`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md)
+  : Create a ReAct (Reasoning + Acting) agent graph
+- [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md)
+  : Create a sequential pipeline graph
+- [`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/supervisor_graph.md)
+  : Create a supervisor graph that routes to workers
+
+## Memory & Persistence
+
+- [`memory()`](https://ian-flores.github.io/orchestr/reference/memory.md)
+  : Create a key-value memory store
+- [`checkpointer()`](https://ian-flores.github.io/orchestr/reference/checkpointer.md)
+  : Create a workflow checkpointer
+
+## Human-in-the-Loop
+
+- [`new_interrupt()`](https://ian-flores.github.io/orchestr/reference/new_interrupt.md)
+  : Create an agent graph interrupt condition
+- [`approval_tool()`](https://ian-flores.github.io/orchestr/reference/approval_tool.md)
+  : Create an approval tool for human-in-the-loop workflows
+
+## Visualization
+
+- [`as_mermaid()`](https://ian-flores.github.io/orchestr/reference/as_mermaid.md)
+  : Render an agent graph as a Mermaid diagram
+
+# Articles
+
+### Getting Started
+
+- [Getting Started with
+  orchestr](https://ian-flores.github.io/orchestr/articles/quickstart.md):
+
+### Advanced
+
+- [Multi-Agent
+  Workflows](https://ian-flores.github.io/orchestr/articles/multi-agent.md):
+- [Secure Execution with
+  securer](https://ian-flores.github.io/orchestr/articles/securer.md):

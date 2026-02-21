@@ -1,0 +1,138 @@
+# Secure Execution with securer
+
+## Why Sandboxed Execution?
+
+When LLM agents generate and execute R code, you need guardrails. The
+[securer](https://github.com/ian-flores/securer) package provides
+OS-level sandboxing so that generated code cannot access the filesystem,
+network, or system resources beyond what you explicitly allow.
+
+orchestr integrates with securer through the `secure = TRUE` flag on
+[`agent()`](https://ian-flores.github.io/orchestr/reference/Agent.md).
+
+## Installation
+
+``` r
+# Install both packages
+remotes::install_github("ian-flores/securer")
+remotes::install_github("ian-flores/orchestr")
+```
+
+## Creating a Secure Agent
+
+``` r
+library(orchestr)
+library(ellmer)
+library(securer)
+
+# Define a tool that runs R code in a sandbox
+code_tool <- securer_tool(
+  name = "run_code",
+  description = "Execute R code in a sandboxed environment.",
+  args = list(code = "character"),
+  handler = function(code) {
+    eval(parse(text = code))
+  }
+)
+
+# Create an agent with sandboxed execution
+secure_agent <- agent("code-runner",
+  chat = chat_anthropic(
+    system_prompt = paste(
+      "You are a data analysis assistant.",
+      "Use the run_code tool to execute R code.",
+      "Always show your work."
+    )
+  ),
+  tools = list(code_tool),
+  secure = TRUE,
+  sandbox = TRUE
+)
+
+# The agent can now safely execute LLM-generated code
+result <- secure_agent$invoke("Calculate the mean of c(1, 5, 3, 7, 2) in R.")
+cat(result)
+
+# Always close when done to clean up the securer session
+secure_agent$close()
+```
+
+## What the Sandbox Restricts
+
+When `sandbox = TRUE`, the child R process runs inside an OS sandbox:
+
+- **macOS**: Seatbelt profile via `sandbox-exec`. Blocks filesystem
+  writes outside temp, network access, and process spawning.
+- **Linux**: Bubblewrap (`bwrap`) namespace isolation. Blocks
+  filesystem, network, and IPC outside the sandbox.
+- **Windows**: Environment isolation (clean HOME, TMPDIR, R_LIBS_USER).
+  No filesystem or network restrictions without admin privileges.
+
+## Mixing Secure and Regular Tools
+
+You can combine securer tools (which run in the sandbox) with regular
+ellmer tools (which run in the parent process).
+
+``` r
+# Regular tool -- runs in the parent process, no sandbox
+weather_tool <- tool(
+  function(city) paste0("Weather in ", city, ": sunny, 22C."),
+  "Get weather for a city.",
+  arguments = list(city = type_string("City name"))
+)
+
+# Securer tool -- runs in the sandboxed child process
+calc_tool <- securer_tool(
+  name = "calculate",
+  description = "Run a calculation in R.",
+  args = list(expr = "character"),
+  handler = function(expr) eval(parse(text = expr))
+)
+
+hybrid_agent <- agent("hybrid",
+  chat = chat_anthropic(
+    system_prompt = "You can check weather and do calculations."
+  ),
+  tools = list(weather_tool, calc_tool),
+  secure = TRUE
+)
+
+# The weather tool runs in-process; the calculate tool runs sandboxed
+result <- hybrid_agent$invoke("What is 2^10? Also, what's the weather in London?")
+hybrid_agent$close()
+```
+
+## Using Secure Agents in Graphs
+
+Secure agents work the same as regular agents inside a graph.
+
+``` r
+analyst <- agent("analyst",
+  chat = chat_anthropic(
+    system_prompt = "You are a data analyst. Use run_code to compute answers."
+  ),
+  tools = list(code_tool),
+  secure = TRUE
+)
+
+graph <- react_graph(analyst)
+result <- graph$invoke(list(
+  messages = list("What is the standard deviation of c(10, 20, 30, 40, 50)?")
+))
+
+analyst$close()
+```
+
+You can also use
+[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md)
+and
+[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/supervisor_graph.md)
+with secure agents. Use `verbose = TRUE` on `compile()` or `$invoke()`
+to trace execution flow:
+
+``` r
+result <- graph$invoke(
+  list(messages = list("Compute the correlation between mpg and wt in mtcars.")),
+  verbose = TRUE
+)
+```
