@@ -11,6 +11,14 @@ Graph-based multi-agent workflow orchestration for R. Built on
 optionally [securer](https://github.com/ian-flores/securer) for
 sandboxed code execution.
 
+## When to use orchestr
+
+Use orchestr when a single ellmer chat isn’t enough – when you need
+multi-step reasoning (ReAct loops), parallel tool execution,
+supervisor-routed agent teams, or persistent memory across turns. If
+your workflow fits in one LLM call, use ellmer directly. If it needs
+orchestration, use orchestr.
+
 ## Part of the secure-r-dev Ecosystem
 
 orchestr is part of a 7-package ecosystem for building governed AI
@@ -52,8 +60,8 @@ execution, secureguard for safety, and securecontext for memory.
 ## Installation
 
 ``` r
-# install.packages("remotes")
-remotes::install_github("ian-flores/orchestr")
+# install.packages("pak")
+pak::pak("ian-flores/orchestr")
 ```
 
 ## Setup
@@ -175,6 +183,11 @@ of costs:
   Workflows](https://ian-flores.github.io/orchestr/articles/multi-agent.html)
 - [Secure
   Execution](https://ian-flores.github.io/orchestr/articles/securer.html)
+
+## Contributing
+
+Contributions are welcome! Please file issues on GitHub and submit pull
+requests.
 
 ## License
 

@@ -50,10 +50,17 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="orchestr">orchestr<a class="anchor" aria-label="anchor" href="#orchestr"></a>
 </h1></div>
+<!-- badges: start -->
+
 <blockquote>
 <p>[!CAUTION] <strong>Alpha software.</strong> This package is part of a broader effort by <a href="https://github.com/ian-flores" class="external-link">Ian Flores Siaca</a> to develop proper AI infrastructure for the R ecosystem. It is under active development and should <strong>not</strong> be used in production until an official release is published. APIs may change without notice.</p>
 </blockquote>
 <p>Graph-based multi-agent workflow orchestration for R. Built on <a href="https://github.com/tidyverse/ellmer" class="external-link">ellmer</a> for LLM chat and optionally <a href="https://github.com/ian-flores/securer" class="external-link">securer</a> for sandboxed code execution.</p>
+<div class="section level2">
+<h2 id="when-to-use-orchestr">When to use orchestr<a class="anchor" aria-label="anchor" href="#when-to-use-orchestr"></a>
+</h2>
+<p>Use orchestr when a single ellmer chat isn’t enough – when you need multi-step reasoning (ReAct loops), parallel tool execution, supervisor-routed agent teams, or persistent memory across turns. If your workflow fits in one LLM call, use ellmer directly. If it needs orchestration, use orchestr.</p>
+</div>
 <div class="section level2">
 <h2 id="part-of-the-secure-r-dev-ecosystem">Part of the secure-r-dev Ecosystem<a class="anchor" aria-label="anchor" href="#part-of-the-secure-r-dev-ecosystem"></a>
 </h2>
@@ -121,8 +128,8 @@
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ian-flores/orchestr"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"ian-flores/orchestr"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
@@ -239,6 +246,11 @@
 </ul>
 </div>
 <div class="section level2">
+<h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
+</h2>
+<p>Contributions are welcome! Please file issues on GitHub and submit pull requests.</p>
+</div>
+<div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
 </h2>
 <p>MIT</p>
@@ -275,7 +287,15 @@
 </ul>
 </div>
 
-
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/ian-flores/orchestr/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/ian-flores/orchestr/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://app.codecov.io/gh/ian-flores/orchestr" class="external-link"><img src="https://codecov.io/gh/ian-flores/orchestr/graph/badge.svg" alt="Codecov test coverage"></a></li>
+<li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
+<li><a href="https://ian-flores.github.io/orchestr/"><img src="https://github.com/ian-flores/orchestr/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
+</ul>
+</div>
 
   </aside>
 </div>
