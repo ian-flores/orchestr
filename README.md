@@ -8,6 +8,42 @@ Graph-based multi-agent workflow orchestration for R. Built on
 optionally [securer](https://github.com/ian-flores/securer) for
 sandboxed code execution.
 
+## Part of the secure-r-dev Ecosystem
+
+orchestr is part of a 7-package ecosystem for building governed AI agents in R:
+
+```
+                    ┌─────────────┐
+                    │   securer    │
+                    └──────┬──────┘
+          ┌────────────────┼─────────────────┐
+          │                │                  │
+   ┌──────▼──────┐  ┌─────▼──────┐  ┌───────▼────────┐
+   │ securetools  │  │ secureguard│  │ securecontext   │
+   └──────┬───────┘  └─────┬──────┘  └───────┬────────┘
+          └────────────────┼─────────────────┘
+                    ┌──────▼────────┐
+                    │>>> orchestr<<<│
+                    └──────┬────────┘
+          ┌────────────────┼─────────────────┐
+          │                                  │
+   ┌──────▼──────┐                    ┌──────▼──────┐
+   │ securetrace  │                   │ securebench  │
+   └─────────────┘                    └─────────────┘
+```
+
+orchestr is the orchestration hub that wires agents into workflows. It sits below the tool/guardrail/context layer and above the observability and benchmarking layers, coordinating agents that use securer for execution, secureguard for safety, and securecontext for memory.
+
+| Package | Role |
+|---------|------|
+| [securer](https://github.com/ian-flores/securer) | Sandboxed R execution with tool-call IPC |
+| [securetools](https://github.com/ian-flores/securetools) | Pre-built security-hardened tool definitions |
+| [secureguard](https://github.com/ian-flores/secureguard) | Input/code/output guardrails (injection, PII, secrets) |
+| [orchestr](https://github.com/ian-flores/orchestr) | Graph-based agent orchestration |
+| [securecontext](https://github.com/ian-flores/securecontext) | Document chunking, embeddings, RAG retrieval |
+| [securetrace](https://github.com/ian-flores/securetrace) | Structured tracing, token/cost accounting, JSONL export |
+| [securebench](https://github.com/ian-flores/securebench) | Guardrail benchmarking with precision/recall/F1 metrics |
+
 ## Installation
 
 ```r
