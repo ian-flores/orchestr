@@ -60,18 +60,55 @@
 
     
     
+<div class="section level2">
+<h2 id="why-trace-agent-workflows">Why Trace Agent Workflows?<a class="anchor" aria-label="anchor" href="#why-trace-agent-workflows"></a>
+</h2>
+<p>Agent workflows are opaque by default. When you call
+<code>graph$invoke()</code>, a chain of LLM calls, tool executions, and
+routing decisions happens behind the scenes. If the agent produces a
+wrong answer, takes too long, or costs more than expected, you have no
+way to diagnose the problem without structured observability.</p>
+<p>Tracing solves three concrete problems:</p>
+<ul>
+<li><p><strong>Debugging</strong>: When an agent gives a wrong answer,
+traces show you exactly which node produced the bad output, what inputs
+it received, and whether any tool calls failed. Instead of re-running
+the entire workflow with print statements, you inspect the
+trace.</p></li>
+<li><p><strong>Performance</strong>: Each span records its duration. In
+a pipeline with three agents, the trace immediately shows whether the
+bottleneck is the profiler (waiting on the LLM) or the reporter
+(generating a long response). You optimize the right thing.</p></li>
+<li><p><strong>Cost control</strong>: LLM calls cost money, and
+multi-agent workflows multiply the spend. Traced workflows record token
+counts and estimated costs per span. You can spot a supervisor that is
+routing inefficiently (too many iterations) or an agent that is sending
+unnecessarily long prompts.</p></li>
+</ul>
 <p>orchestr integrates with <a href="https://github.com/ian-flores/securetrace" class="external-link">securetrace</a> to give
 you full observability into agent graph execution. Pass a
 <code>Trace</code> object to <code>$invoke()</code> or
 <code>$stream()</code> and every node gets its own span – timing,
 errors, and metadata are captured automatically.</p>
+<p>The trace structure follows a simple hierarchy:</p>
+<pre><code> Trace: "my-pipeline-run"
+ |
+ +-- Span: node:profiler   [2.1s, 180 tokens, $0.003]
+ |
+ +-- Span: node:analyst    [2.5s, 220 tokens, $0.004]
+ |
+ +-- Span: node:reporter   [1.5s, 150 tokens, $0.002]</code></pre>
+<p>Each trace contains one or more spans. Each span corresponds to a
+graph node execution and carries timing, token usage, cost, and error
+information.</p>
 <p>For orchestr basics, see <code><a href="../articles/quickstart.html">vignette("quickstart")</a></code>. For
 securetrace fundamentals, see
 <code><a href="https://ian-flores.github.io/securetrace/articles/observability.html" class="external-link">vignette("observability", package = "securetrace")</a></code>.</p>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"ian-flores/orchestr"</span><span class="op">)</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"ian-flores/securetrace"</span><span class="op">)</span></span></code></pre></div>
@@ -83,7 +120,7 @@ securetrace fundamentals, see
 accepts a <code><a href="https://ian-flores.github.io/securetrace/reference/Trace.html" class="external-link">securetrace::Trace</a></code> object. When provided,
 orchestr wraps each node execution in a span named
 <code>"node:&lt;name&gt;"</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/orchestr/">orchestr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ellmer.tidyverse.org" class="external-link">ellmer</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/securetrace/" class="external-link">securetrace</a></span><span class="op">)</span></span>
@@ -117,9 +154,11 @@ warning and execution continues without tracing.</p>
 <div class="section level2">
 <h2 id="pipeline-tracing">Pipeline Tracing<a class="anchor" aria-label="anchor" href="#pipeline-tracing"></a>
 </h2>
-<p>In a pipeline, each agent becomes its own span. This makes it easy to
-see where time is spent across the chain:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>In a pipeline, each agent becomes its own span. This makes it
+straightforward to identify where time and tokens are spent across the
+chain. If one agent is disproportionately slow or expensive, the trace
+tells you immediately.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">profiler</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"profiler"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"Profile datasets: columns, types, distributions."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
@@ -158,8 +197,11 @@ see where time is spent across the chain:</p>
 </h2>
 <p>Supervisor graphs produce a richer trace because the supervisor may
 route to multiple workers across several iterations. Each supervisor
-decision and worker execution gets its own span:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+decision and worker execution gets its own span. This visibility is
+especially valuable for supervisors because the routing behavior is
+non-deterministic – you need the trace to understand what actually
+happened.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">supervisor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"supervisor"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"You coordinate workers to solve tasks."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
@@ -202,8 +244,10 @@ decision and worker execution gets its own span:</p>
 <h2 id="streaming-with-traces">Streaming with Traces<a class="anchor" aria-label="anchor" href="#streaming-with-traces"></a>
 </h2>
 <p><code>$stream()</code> also accepts <code>trace=</code>. You get both
-state snapshots and full tracing:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+state snapshots and full tracing, which is useful for interactive
+applications that need progress updates while also recording full
+observability data for later analysis.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://ian-flores.github.io/securetrace/reference/Trace.html" class="external-link">Trace</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"streamed-pipeline"</span><span class="op">)</span></span>
 <span><span class="va">tr</span><span class="op">$</span><span class="fu">start</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -231,8 +275,10 @@ state snapshots and full tracing:</p>
 <p>When agent nodes make LLM calls, securetrace can track token usage
 and compute cost. Combine the <code>trace=</code> parameter with
 <code><a href="https://ian-flores.github.io/securetrace/reference/trace_total_cost.html" class="external-link">trace_total_cost()</a></code> to monitor spend across an entire graph
-run:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+run. This is critical for production deployments where multi-agent
+workflows can quickly accumulate costs – a supervisor with 10 iterations
+and 3 workers could make 20+ LLM calls in a single invocation.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://ian-flores.github.io/securetrace/reference/Trace.html" class="external-link">Trace</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"cost-tracking"</span><span class="op">)</span></span>
 <span><span class="va">tr</span><span class="op">$</span><span class="fu">start</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -256,8 +302,10 @@ handled automatically when securetrace integration is active.</p>
 <div class="section level3">
 <h3 id="jsonl-export">JSONL Export<a class="anchor" aria-label="anchor" href="#jsonl-export"></a>
 </h3>
-<p>Write traced agent runs to a JSONL file for post-hoc analysis:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p>Write traced agent runs to a JSONL file for post-hoc analysis. Each
+line is a self-contained JSON object representing one span, making it
+easy to process with standard tools (jq, pandas, data.table).</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">exp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/jsonl_exporter.html" class="external-link">jsonl_exporter</a></span><span class="op">(</span><span class="st">"agent-traces.jsonl"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">tr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://ian-flores.github.io/securetrace/reference/Trace.html" class="external-link">Trace</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"export-demo"</span><span class="op">)</span></span>
@@ -278,7 +326,7 @@ handled automatically when securetrace integration is active.</p>
 </h3>
 <p>For interactive debugging, use <code><a href="https://ian-flores.github.io/securetrace/reference/console_exporter.html" class="external-link">console_exporter()</a></code> to
 print spans as they complete:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">exp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/console_exporter.html" class="external-link">console_exporter</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">tr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://ian-flores.github.io/securetrace/reference/Trace.html" class="external-link">Trace</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"debug-run"</span><span class="op">)</span></span>
@@ -302,13 +350,25 @@ print spans as they complete:</p>
 </h2>
 <p>For production deployments, securetrace supports OTLP export (Jaeger,
 Grafana Tempo), Prometheus metrics, and W3C Trace Context propagation.
-See <code><a href="https://ian-flores.github.io/securetrace/articles/cloud-native.html" class="external-link">vignette("cloud-native", package = "securetrace")</a></code> for
-full details.</p>
-<div class="section level3">
-<h3 id="otlp-export">OTLP Export<a class="anchor" aria-label="anchor" href="#otlp-export"></a>
-</h3>
-<p>Send traced agent runs to a Jaeger or Tempo collector:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+Rather than duplicating the full setup here, see
+<code><a href="https://ian-flores.github.io/securetrace/articles/cloud-native.html" class="external-link">vignette("cloud-native", package = "securetrace")</a></code> for
+comprehensive configuration guides covering:</p>
+<ul>
+<li>
+<strong>OTLP export</strong> – sending traces to Jaeger or Grafana
+Tempo collectors</li>
+<li>
+<strong>Prometheus metrics</strong> – exposing span counts, token
+usage, and cost as time-series metrics for dashboards and alerting</li>
+<li>
+<strong>W3C Trace Context</strong> – propagating trace IDs across
+service boundaries</li>
+<li>
+<strong>Multi-exporter setup</strong> – combining OTLP, Prometheus,
+and JSONL for complete observability</li>
+</ul>
+<p>Here is a minimal OTLP example to get started:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">exp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/otlp_exporter.html" class="external-link">otlp_exporter</a></span><span class="op">(</span></span>
 <span>  endpoint <span class="op">=</span> <span class="st">"http://localhost:4318"</span>,</span>
 <span>  service_name <span class="op">=</span> <span class="st">"r-agent-pipeline"</span></span>
@@ -326,85 +386,15 @@ full details.</p>
 <span><span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/export_trace.html" class="external-link">export_trace</a></span><span class="op">(</span><span class="va">exp</span>, <span class="va">tr</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Trace exported to http://localhost:4318/v1/traces</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="prometheus-metrics">Prometheus Metrics<a class="anchor" aria-label="anchor" href="#prometheus-metrics"></a>
-</h3>
-<p>Expose agent metrics for Prometheus scraping. Each traced graph run
-feeds counters for span counts, token usage, and cost:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">reg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/prometheus_registry.html" class="external-link">prometheus_registry</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">prom_exp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/prometheus_exporter.html" class="external-link">prometheus_exporter</a></span><span class="op">(</span><span class="va">reg</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Run several traced agent invocations</span></span>
-<span><span class="kw">for</span> <span class="op">(</span><span class="va">task</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Summarize iris."</span>, <span class="st">"Describe mtcars."</span>, <span class="st">"Analyze sleep."</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">tr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://ian-flores.github.io/securetrace/reference/Trace.html" class="external-link">Trace</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"batch-run"</span><span class="op">)</span></span>
-<span>  <span class="va">tr</span><span class="op">$</span><span class="fu">start</span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="va">result</span> <span class="op">&lt;-</span> <span class="va">pipeline</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">task</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    trace <span class="op">=</span> <span class="va">tr</span></span>
-<span>  <span class="op">)</span></span>
-<span></span>
-<span>  <span class="va">tr</span><span class="op">$</span><span class="fu">end</span><span class="op">(</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/export_trace.html" class="external-link">export_trace</a></span><span class="op">(</span><span class="va">prom_exp</span>, <span class="va">tr</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="co"># View cumulative metrics</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/format_prometheus.html" class="external-link">format_prometheus</a></span><span class="op">(</span><span class="va">reg</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; securetrace_spans_total{type="custom",status="completed"} 9</span></span>
-<span><span class="co">#&gt; securetrace_traces_total{status="completed"} 3</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="multi-exporter-setup">Multi-Exporter Setup<a class="anchor" aria-label="anchor" href="#multi-exporter-setup"></a>
-</h2>
-<p>In production, combine OTLP, Prometheus, and JSONL for complete
-observability:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">reg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/prometheus_registry.html" class="external-link">prometheus_registry</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">combined</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/multi_exporter.html" class="external-link">multi_exporter</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/otlp_exporter.html" class="external-link">otlp_exporter</a></span><span class="op">(</span><span class="st">"http://localhost:4318"</span>, service_name <span class="op">=</span> <span class="st">"r-agent"</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/prometheus_exporter.html" class="external-link">prometheus_exporter</a></span><span class="op">(</span><span class="va">reg</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/jsonl_exporter.html" class="external-link">jsonl_exporter</a></span><span class="op">(</span><span class="st">"traces.jsonl"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Start Prometheus scrape endpoint</span></span>
-<span><span class="va">srv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/serve_prometheus.html" class="external-link">serve_prometheus</a></span><span class="op">(</span><span class="va">reg</span>, host <span class="op">=</span> <span class="st">"0.0.0.0"</span>, port <span class="op">=</span> <span class="fl">9090</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># All traced agent runs go to all three destinations</span></span>
-<span><span class="va">tr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://ian-flores.github.io/securetrace/reference/Trace.html" class="external-link">Trace</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"production-run"</span><span class="op">)</span></span>
-<span><span class="va">tr</span><span class="op">$</span><span class="fu">start</span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">pipeline</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Full analysis of mtcars."</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  trace <span class="op">=</span> <span class="va">tr</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">tr</span><span class="op">$</span><span class="fu">end</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://ian-flores.github.io/securetrace/reference/export_trace.html" class="external-link">export_trace</a></span><span class="op">(</span><span class="va">combined</span>, <span class="va">tr</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Clean up</span></span>
-<span><span class="fu">httpuv</span><span class="fu">::</span><span class="fu">stopServer</span><span class="op">(</span><span class="va">srv</span><span class="op">)</span></span></code></pre></div>
-<p>This gives you:</p>
-<ul>
-<li>
-<strong>Jaeger/Tempo</strong> – full traces with per-node spans for
-each agent run</li>
-<li>
-<strong>Prometheus</strong> – time-series metrics for dashboards and
-alerting</li>
-<li>
-<strong>JSONL</strong> – local audit trail for compliance and
-post-hoc analysis</li>
-</ul>
-</div>
 <div class="section level2">
 <h2 id="error-tracing">Error Tracing<a class="anchor" aria-label="anchor" href="#error-tracing"></a>
 </h2>
 <p>When a node fails, orchestr records the error on the span before
-re-raising it. This means failed runs still produce useful traces:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+re-raising it. This means failed runs still produce useful traces – you
+can see exactly which node failed, how long it ran before failing, and
+what error message was produced. This is especially valuable for
+intermittent failures in production.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://ian-flores.github.io/securetrace/reference/Trace.html" class="external-link">Trace</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"error-demo"</span><span class="op">)</span></span>
 <span><span class="va">tr</span><span class="op">$</span><span class="fu">start</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -426,6 +416,32 @@ re-raising it. This means failed runs still produce useful traces:</p>
 <span><span class="co">#&gt;   Spans: 1</span></span>
 <span><span class="co">#&gt;   Duration: 0.5s</span></span>
 <span><span class="co">#&gt;   node:supervisor -- 0.5s (error)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+</h2>
+<ul>
+<li>
+<strong><a href="quickstart.html">Getting Started</a></strong> –
+single-agent basics and provider setup</li>
+<li>
+<strong><a href="multi-agent.html">Multi-Agent
+Workflows</a></strong> – pipelines and supervisors</li>
+<li>
+<strong><a href="securer.html">Secure Execution</a></strong> –
+sandboxed code execution with securer</li>
+<li>
+<strong><a href="governed-agent.html">Governed Agent</a></strong> –
+the full 7-package stack</li>
+<li>
+<strong>securetrace</strong>:
+<code><a href="https://ian-flores.github.io/securetrace/articles/observability.html" class="external-link">vignette("observability", package = "securetrace")</a></code> – trace
+fundamentals</li>
+<li>
+<strong>securetrace</strong>:
+<code><a href="https://ian-flores.github.io/securetrace/articles/cloud-native.html" class="external-link">vignette("cloud-native", package = "securetrace")</a></code> – OTLP,
+Prometheus, W3C</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

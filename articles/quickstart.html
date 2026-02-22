@@ -61,9 +61,76 @@
     
     
 <div class="section level2">
+<h2 id="what-problem-does-orchestr-solve">What Problem Does orchestr Solve?<a class="anchor" aria-label="anchor" href="#what-problem-does-orchestr-solve"></a>
+</h2>
+<p>Large language models are remarkably capable on their own, but
+building a production-grade AI agent requires more than a single
+prompt-response exchange. You need structured reasoning loops so the
+model can think before it acts. You need pipelines that chain
+specialists together. You need supervisors that route work to the right
+expert. And you need all of this to be observable, checkpointable, and
+safe.</p>
+<p>orchestr provides a <strong>graph-based orchestration layer</strong>
+for R that sits on top of <a href="https://github.com/tidyverse/ellmer" class="external-link">ellmer</a> (the LLM chat
+interface) and optionally <a href="https://github.com/ian-flores/securer" class="external-link">securer</a> (sandboxed code
+execution). Instead of writing ad-hoc loops and if-else routing, you
+define agents, wire them into a graph, and let orchestr handle execution
+flow, state management, and iteration control.</p>
+<p>The core abstraction is simple: <strong>agents are nodes, edges
+define flow, and the graph runtime handles the rest</strong>. Whether
+you need a single ReAct agent, a three-stage pipeline, or a supervisor
+that dynamically routes to a pool of workers, the same graph primitives
+apply.</p>
+<div class="section level3">
+<h3 id="the-react-pattern">The ReAct Pattern<a class="anchor" aria-label="anchor" href="#the-react-pattern"></a>
+</h3>
+<p>orchestr’s default execution model follows the ReAct (Reasoning +
+Acting) pattern. The agent repeatedly thinks about what to do, takes an
+action (typically a tool call), observes the result, and decides whether
+to continue or stop:</p>
+<pre><code> think --&gt; act --&gt; observe
+   ^                  |
+   |                  |
+   +------ loop ------+
+         (until done or max iterations)</code></pre>
+<p>This loop is implemented by <code><a href="../reference/react_graph.html">react_graph()</a></code> and runs
+within a safety cap (<code>max_iterations</code>) to prevent runaway LLM
+calls.</p>
+</div>
+<div class="section level3">
+<h3 id="when-to-use-orchestr-vs--plain-ellmer">When to Use orchestr vs. Plain ellmer<a class="anchor" aria-label="anchor" href="#when-to-use-orchestr-vs--plain-ellmer"></a>
+</h3>
+<p>If your use case is a single prompt-response exchange – ask a
+question, get an answer – plain ellmer is the right choice. ellmer
+handles tool call loops internally, supports streaming, and has minimal
+overhead.</p>
+<p>Reach for orchestr when you need one or more of:</p>
+<ul>
+<li>
+<strong>Multi-agent workflows</strong> – pipelines, supervisors, or
+custom graph topologies</li>
+<li>
+<strong>State management</strong> – typed state schemas with
+reducers that accumulate results across nodes</li>
+<li>
+<strong>Checkpointing</strong> – save and resume graph execution
+mid-run</li>
+<li>
+<strong>Observability</strong> – automatic span creation when
+combined with securetrace</li>
+<li>
+<strong>Iteration control</strong> – max_iterations caps,
+conditional routing, interrupt and approval flows</li>
+</ul>
+<p>In short: ellmer gives you a single agent with tools; orchestr gives
+you a framework for composing multiple agents into governed
+workflows.</p>
+</div>
+</div>
+<div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ian-flores/orchestr"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -72,7 +139,7 @@
 </h2>
 <p>orchestr uses <a href="https://github.com/tidyverse/ellmer" class="external-link">ellmer</a> for LLM access.
 Set your provider’s API key before running any examples:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># For Anthropic (Claude)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>ANTHROPIC_API_KEY <span class="op">=</span> <span class="st">"your-key-here"</span><span class="op">)</span></span>
 <span></span>
@@ -83,9 +150,12 @@ Set your provider’s API key before running any examples:</p>
 <div class="section level2">
 <h2 id="using-different-providers">Using Different Providers<a class="anchor" aria-label="anchor" href="#using-different-providers"></a>
 </h2>
-<p>orchestr works with any ellmer chat backend. Pass the appropriate
-<code>chat_*()</code> constructor to <code><a href="../reference/Agent.html">agent()</a></code>:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>orchestr works with any ellmer chat backend. This is a deliberate
+design choice: the orchestration layer should not care which LLM you
+use. Pass the appropriate <code>chat_*()</code> constructor to
+<code><a href="../reference/Agent.html">agent()</a></code> and everything – graphs, pipelines, supervisors,
+tracing – works identically regardless of the backing model.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/orchestr/">orchestr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ellmer.tidyverse.org" class="external-link">ellmer</a></span><span class="op">)</span></span>
 <span></span>
@@ -112,10 +182,12 @@ identically regardless of which provider backs the agent.</p>
 <div class="section level2">
 <h2 id="your-first-agent">Your First Agent<a class="anchor" aria-label="anchor" href="#your-first-agent"></a>
 </h2>
-<p>An <code>Agent</code> wraps an ellmer <code>Chat</code> object. The
-<code><a href="../reference/Agent.html">agent()</a></code> constructor is the recommended way to create
-one.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<p>An <code>Agent</code> wraps an ellmer <code>Chat</code> object with a
+name and an optional system prompt. The <code><a href="../reference/Agent.html">agent()</a></code> constructor
+is the recommended entry point because it validates inputs and provides
+sensible defaults. Under the hood, it creates an R6 <code>Agent</code>
+instance that manages conversation state and tool registration.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/orchestr/">orchestr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ellmer.tidyverse.org" class="external-link">ellmer</a></span><span class="op">)</span></span>
 <span></span>
@@ -130,11 +202,16 @@ one.</p>
 <div class="section level2">
 <h2 id="adding-tools">Adding Tools<a class="anchor" aria-label="anchor" href="#adding-tools"></a>
 </h2>
-<p>Agents become more powerful when you give them tools. ellmer’s
-<code>Chat</code> class handles tool call loops internally – when an
-agent has registered tools, they are executed automatically during
-<code>$chat()</code>.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p>Agents become truly useful when they can take actions beyond
+generating text. Tools let an agent call R functions – looking up data,
+running calculations, querying databases – as part of its reasoning
+process. ellmer’s <code>Chat</code> class handles tool call loops
+internally: when the model decides to use a tool, ellmer executes the
+function and feeds the result back automatically.</p>
+<p>This matters because it transforms the agent from a text generator
+into an actor that can observe real data and adapt its analysis
+accordingly.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">summary_tool</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link">tool</a></span><span class="op">(</span></span>
 <span>  <span class="kw">function</span><span class="op">(</span><span class="va">dataset_name</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/get.html" class="external-link">get</a></span><span class="op">(</span><span class="va">dataset_name</span>, envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ns-internal.html" class="external-link">asNamespace</a></span><span class="op">(</span><span class="st">"datasets"</span><span class="op">)</span><span class="op">)</span></span>
@@ -159,10 +236,17 @@ agent has registered tools, they are executed automatically during
 <div class="section level2">
 <h2 id="single-agent-graph-with-react_graph">Single-Agent Graph with <code>react_graph()</code><a class="anchor" aria-label="anchor" href="#single-agent-graph-with-react_graph"></a>
 </h2>
-<p>The <code><a href="../reference/react_graph.html">react_graph()</a></code> function wraps a single agent with
-state management and checkpointing. This is the simplest way to run an
-agent inside a graph.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p>Why wrap a single agent in a graph at all? Because
+<code><a href="../reference/react_graph.html">react_graph()</a></code> adds three capabilities that a bare agent
+lacks: <strong>state management</strong> (the graph maintains a typed
+state object that persists across iterations),
+<strong>checkpointing</strong> (you can save and resume mid-run), and
+<strong>tracing</strong> (pass a securetrace <code>Trace</code> to
+automatically instrument every iteration).</p>
+<p>Even for simple use cases, the graph wrapper gives you a consistent
+interface (<code>$invoke()</code>, <code>$stream()</code>) that scales
+from one agent to many without changing your calling code.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">analyst</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"analyst"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"You are a data analyst. Analyze data and provide insights."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
@@ -174,7 +258,7 @@ agent inside a graph.</p>
 <p>Use <code>verbose = TRUE</code> when compiling to see execution flow.
 With the convenience functions, pass <code>verbose</code> to
 <code>$invoke()</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">graph</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Describe the distribution of mpg in mtcars."</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -183,9 +267,13 @@ With the convenience functions, pass <code>verbose</code> to
 <div class="section level2">
 <h2 id="agent-pipeline-with-pipeline_graph">Agent Pipeline with <code>pipeline_graph()</code><a class="anchor" aria-label="anchor" href="#agent-pipeline-with-pipeline_graph"></a>
 </h2>
-<p>Chain multiple agents in sequence. Each agent processes the state and
-passes it to the next. One LLM call per agent.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>When a task decomposes into distinct stages – profile the data, then
+analyze patterns, then write a report – a pipeline chains agents in
+sequence. Each agent processes the shared state and passes it forward.
+This is simpler and cheaper than a supervisor because each agent makes
+exactly one LLM call, and the execution order is fixed at graph
+construction time.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">profiler</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"profiler"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"Profile datasets: describe columns, types, missing values, distributions."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
@@ -210,6 +298,12 @@ visualization</li>
 <li>
 <strong><a href="securer.html">Secure Execution</a></strong> –
 sandboxed code execution with securer</li>
+<li>
+<strong><a href="tracing.html">Traced Workflows</a></strong> –
+observability with securetrace</li>
+<li>
+<strong><a href="governed-agent.html">Governed Agent</a></strong> –
+the full 7-package stack</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

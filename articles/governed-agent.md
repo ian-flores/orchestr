@@ -4,7 +4,30 @@ This vignette walks through building a complete **governed AI agent** in
 R – an agent that reasons, acts, guards its inputs and outputs, executes
 code in a sandbox, retrieves context from a knowledge base, and produces
 structured observability traces. It brings together all 7 packages in
-the secure-r-dev ecosystem:
+the secure-r-dev ecosystem.
+
+## Ecosystem Architecture
+
+The seven packages form a layered stack. At the bottom, `securer`
+provides sandboxed execution. In the middle, `securetools`,
+`secureguard`, and `securecontext` provide tools, guardrails, and
+memory. `orchestr` ties them together into graph-based workflows. At the
+top, `securetrace` and `securebench` provide observability and
+evaluation.
+
+                             orchestr
+                        (graph orchestration)
+                         /       |       \
+                        /        |        \
+              securetools   secureguard   securecontext
+               (tools)      (guardrails)   (memory/RAG)
+                        \        |        /
+                         \       |       /
+                             securer
+                        (sandboxed execution)
+
+                  securetrace          securebench
+                (observability)       (benchmarking)
 
 | Package           | Role                                   |
 |-------------------|----------------------------------------|
@@ -17,10 +40,15 @@ the secure-r-dev ecosystem:
 | **securetrace**   | Structured tracing and cost accounting |
 | **securebench**   | Guardrail benchmarking                 |
 
-Each section introduces one layer of governance. The final section
+Each section below introduces one layer of governance. The final section
 assembles everything into a single coherent example.
 
 ## Step 1: Define the Agent
+
+Every governed agent starts with the same foundation: an ellmer `Chat`
+object wrapped in an orchestr `Agent`. The agent constructor binds
+together the LLM connection, system prompt, and tool registry into a
+single entity that the graph runtime can execute.
 
 An agent wraps an ellmer `Chat` object with a name, system prompt, and
 optional tools. The
@@ -62,6 +90,11 @@ For more graph patterns (pipelines, supervisors), see
 
 ## Step 2: Add Secure Tools
 
+With the agent defined, the next step is giving it the ability to act on
+the world. securetools provides pre-built tool factories that are
+hardened by default – path validation, rate limiting, and AST-based
+expression whitelisting are built in, not bolted on.
+
 securetools provides pre-built tool factories with built-in security
 constraints. Each factory returns a
 [`securer::securer_tool()`](https://ian-flores.github.io/securer/reference/securer_tool.html)
@@ -99,6 +132,13 @@ against the `allowed_dirs` allowlist. See
 tool catalog.
 
 ## Step 3: Guard the Agent
+
+Tools let the agent act; guardrails constrain what actions are
+acceptable. secureguard provides three layers of defense – input, code,
+and output – that work together to create a security perimeter around
+the agent. Input guards catch malicious prompts before the LLM sees
+them. Code guards validate generated code before execution. Output
+guards sanitize responses before they reach the user.
 
 secureguard provides three layers of guardrails – input, code, and
 output – that compose into a `secure_pipeline()`.
@@ -175,6 +215,12 @@ output_result$result
 
 ## Step 4: Sandbox Execution
 
+Guardrails provide defense-in-depth at the application level, but they
+are ultimately R code checking R code. A sufficiently creative adversary
+might find a bypass. Sandboxed execution adds an orthogonal layer of
+protection at the OS level – even if a code guardrail misses a dangerous
+call, the sandbox prevents it from succeeding.
+
 securer runs agent-generated code in an isolated child process with
 OS-level sandboxing (Seatbelt on macOS, bubblewrap on Linux). Combine it
 with secureguard’s code guardrails via `as_pre_execute_hook()`:
@@ -236,6 +282,13 @@ See
 for more patterns.
 
 ## Step 5: Add RAG Memory
+
+An agent with tools and guardrails can act safely, but it only knows
+what the LLM was trained on. For domain-specific questions – “What was
+Q4 revenue?” – the agent needs access to your data. securecontext
+provides local TF-IDF embeddings, a vector store, and a knowledge store
+that can be wired into orchestr as agent memory. All retrieval runs
+locally; no data leaves the R process.
 
 securecontext provides local TF-IDF embeddings, a vector store, and a
 knowledge store that can be wired into orchestr as agent memory.
@@ -304,6 +357,12 @@ For the full RAG pipeline, see
 
 ## Step 6: Instrument with Traces
 
+With all the functional layers in place – tools, guardrails, sandbox,
+memory – the final governance requirement is observability. You need to
+know what your agent did, how long it took, how much it cost, and
+whether any errors occurred. securetrace provides structured tracing
+that integrates directly with orchestr’s graph runtime.
+
 securetrace provides structured tracing with spans, token accounting,
 and multiple export backends. Pass a `Trace` to `graph$invoke()` to
 automatically instrument every node:
@@ -362,7 +421,9 @@ result <- with_trace("full-pipeline", {
 ### Exporting Traces
 
 Export to JSONL for local analysis, OTLP for Jaeger/Tempo, or Prometheus
-for time-series metrics:
+for time-series metrics. For detailed configuration of cloud-native
+exporters, see
+[`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html).
 
 ``` r
 # JSONL for local audit
@@ -391,6 +452,12 @@ and
 [`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html).
 
 ## Step 7: Benchmark Guardrails
+
+Before deploying guardrails to production, you need to know how well
+they perform. A guardrail that blocks 90% of injections but also blocks
+20% of legitimate queries is worse than useless. securebench provides
+precision, recall, and F1 metrics so you can measure this tradeoff
+quantitatively.
 
 securebench measures guardrail accuracy with precision, recall, and F1
 metrics. Use it to validate your guardrail configuration before
@@ -492,8 +559,9 @@ comparison$regressed
 
 ## Step 8: Full Assembled Example
 
-Here is a complete governed agent combining all seven layers. This is
-the blueprint for production AI agent deployments in R.
+Below is the complete governed agent combining all seven layers. This is
+the blueprint for production AI agent deployments in R. Each numbered
+section corresponds to a governance layer introduced above.
 
 ``` r
 library(orchestr)

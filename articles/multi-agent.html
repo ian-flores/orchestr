@@ -61,16 +61,64 @@
     
     
 <div class="section level2">
+<h2 id="choosing-a-multi-agent-pattern">Choosing a Multi-Agent Pattern<a class="anchor" aria-label="anchor" href="#choosing-a-multi-agent-pattern"></a>
+</h2>
+<p>When a single agent is not enough – because the task has distinct
+stages, or because different subtasks require different expertise –
+orchestr provides two multi-agent patterns: <strong>pipelines</strong>
+and <strong>supervisors</strong>. Choosing between them is the first
+design decision for any multi-agent workflow.</p>
+<p>A <strong>pipeline</strong> is the right choice when you know the
+sequence of steps at design time. Data flows linearly from one
+specialist to the next, like an assembly line. Each agent makes exactly
+one LLM call, so costs are predictable and execution order is
+deterministic.</p>
+<p>A <strong>supervisor</strong> is the right choice when the routing
+depends on the content of the request. A coordinator agent reads the
+user’s message, decides which specialist should handle it, and
+dispatches accordingly. The supervisor can route to multiple workers
+across several iterations, making it suitable for open-ended tasks where
+the needed expertise is not known in advance.</p>
+<p>Here is a comparison of the two patterns:</p>
+<pre><code> Pattern     | Flow          | LLM Calls  | Best For
+ ------------|---------------|------------|----------------------------------
+ Pipeline    | A -&gt; B -&gt; C   | 1 per node | Fixed stages, predictable cost
+ Supervisor  | Router -&gt; *   | 2+ per     | Dynamic routing, open-ended tasks
+             |               | iteration  |</code></pre>
+<p>If your workflow has a fixed sequence of steps, start with a
+pipeline. If the routing logic depends on the user’s input, use a
+supervisor. If you need something more complex (conditional branches,
+cycles, human-in-the-loop approvals), drop down to
+<code><a href="../reference/graph_builder.html">graph_builder()</a></code> for full control over the topology.</p>
+</div>
+<div class="section level2">
 <h2 id="pipeline-pattern">Pipeline Pattern<a class="anchor" aria-label="anchor" href="#pipeline-pattern"></a>
 </h2>
 <p>A pipeline passes state through a sequence of agents, each
-transforming it before handing off to the next. Use
-<code><a href="../reference/pipeline_graph.html">pipeline_graph()</a></code> for a concise setup, or
+transforming it before handing off to the next. The key idea is
+<strong>separation of concerns</strong>: each agent has a focused role,
+and the pipeline composes them into a coherent workflow. This makes
+individual agents easier to test, swap, and reason about compared to a
+single monolithic prompt.</p>
+<p>The pipeline flow looks like this:</p>
+<pre><code> [User Input]
+      |
+      v
+ +-----------+     +-----------+     +-----------+
+ |  Agent A  | --&gt; |  Agent B  | --&gt; |  Agent C  |
+ | (profile) |     | (analyze) |     |  (report) |
+ +-----------+     +-----------+     +-----------+
+                                          |
+                                          v
+                                    [Final Output]</code></pre>
+<p>Use <code><a href="../reference/pipeline_graph.html">pipeline_graph()</a></code> for a concise setup, or
 <code><a href="../reference/graph_builder.html">graph_builder()</a></code> for full control.</p>
 <div class="section level3">
 <h3 id="using-pipeline_graph">Using <code>pipeline_graph()</code><a class="anchor" aria-label="anchor" href="#using-pipeline_graph"></a>
 </h3>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<p>The simplest way to create a pipeline. Pass agents in order and
+orchestr wires the edges automatically.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/orchestr/">orchestr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ellmer.tidyverse.org" class="external-link">ellmer</a></span><span class="op">)</span></span>
 <span></span>
@@ -93,8 +141,12 @@ transforming it before handing off to the next. Use
 <h3 id="data-analysis-pipeline">Data Analysis Pipeline<a class="anchor" aria-label="anchor" href="#data-analysis-pipeline"></a>
 </h3>
 <p>A more realistic pipeline that profiles data, analyzes patterns, and
-produces a report:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+produces a report. This three-stage design is common in data science
+workflows: the profiler gathers facts, the analyst finds meaning, and
+the reporter communicates results. Each agent sees the accumulated
+conversation history, so the analyst can reference the profiler’s output
+and the reporter can reference both.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">profiler</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"profiler"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"Profile datasets: describe columns, types, missing values, distributions."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
@@ -115,9 +167,13 @@ produces a report:</p>
 <div class="section level3">
 <h3 id="using-graph_builder-directly">Using <code>graph_builder()</code> Directly<a class="anchor" aria-label="anchor" href="#using-graph_builder-directly"></a>
 </h3>
-<p>For more control (e.g., adding conditional edges), use the builder
-API:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>For more control – conditional edges, cycles, or custom node
+functions – use the builder API. This is the same API that
+<code><a href="../reference/pipeline_graph.html">pipeline_graph()</a></code> and <code><a href="../reference/supervisor_graph.html">supervisor_graph()</a></code> use
+internally. The builder gives you full access to the graph topology: add
+nodes, wire edges (including conditional edges), and set the entry point
+explicitly.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">drafter</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"drafter"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"Write a short draft on the given topic."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
@@ -144,10 +200,35 @@ API:</p>
 <div class="section level2">
 <h2 id="supervisor-pattern">Supervisor Pattern<a class="anchor" aria-label="anchor" href="#supervisor-pattern"></a>
 </h2>
-<p>A supervisor agent routes tasks to specialized workers based on the
-content of the request. Use <code><a href="../reference/supervisor_graph.html">supervisor_graph()</a></code> for a
-concise setup.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<p>While pipelines follow a fixed path, supervisors make <strong>dynamic
+routing decisions</strong> at runtime. A supervisor agent receives the
+user’s request, evaluates which specialist is best suited to handle it,
+and dispatches the work using a <code>route</code> tool that orchestr
+injects automatically. After the worker responds, control returns to the
+supervisor, which can route again (to a different worker, or the same
+one) or finish.</p>
+<p>This pattern is powerful for open-ended tasks where the required
+expertise depends on the input. A question about calculus goes to the
+math worker; a request to polish prose goes to the writing worker. The
+supervisor makes this decision using the LLM’s own judgment, guided by
+its system prompt and the worker descriptions.</p>
+<p>The routing flow looks like this:</p>
+<pre><code>                 +------------+
+                 | Supervisor |
+                 +-----+------+
+                       |
+          route("math") | route("writing") | FINISH
+               |                |               |
+               v                v               v
+          +--------+      +----------+      [Output]
+          |  Math  |      | Writing  |
+          +--------+      +----------+
+               |                |
+               +----+     +----+
+                    |     |
+                    v     v
+               (back to Supervisor)</code></pre>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">supervisor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"supervisor"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"You coordinate workers to solve tasks."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
@@ -176,11 +257,32 @@ it calls to dispatch to workers or finish. Start with low
 involves an LLM call for the supervisor plus the selected worker.</p>
 </div>
 <div class="section level2">
+<h2 id="state-management">State Management<a class="anchor" aria-label="anchor" href="#state-management"></a>
+</h2>
+<p>All graph types in orchestr share a common state model. State is a
+named list that flows through the graph, getting modified by each node.
+By default, orchestr uses a simple schema where <code>messages</code> is
+a list that gets appended to as agents respond.</p>
+<p>Understanding state flow matters because it determines what each
+agent sees. In a pipeline, the second agent sees the first agent’s
+output in the message history. In a supervisor, each worker sees the
+full conversation including the supervisor’s routing decisions. This
+shared-state design means agents can build on each other’s work without
+explicit message passing.</p>
+<p>For advanced use cases, <code>StateSchema$new()</code> lets you
+define typed fields with custom reducers. For example, you might
+accumulate a <code>findings</code> list across pipeline stages while
+keeping a <code>summary</code> field that gets overwritten by the final
+agent.</p>
+</div>
+<div class="section level2">
 <h2 id="streaming-state-snapshots">Streaming State Snapshots<a class="anchor" aria-label="anchor" href="#streaming-state-snapshots"></a>
 </h2>
-<p>Use <code>$stream()</code> to collect state snapshots at each step,
-useful for debugging or building progress indicators.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p>Use <code>$stream()</code> to collect state snapshots at each step.
+This is useful for building progress indicators in interactive
+applications, or for debugging graph execution by inspecting
+intermediate states.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pipeline</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pipeline_graph.html">pipeline_graph</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"drafter"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>    system_prompt <span class="op">=</span> <span class="st">"Write a short draft on the given topic."</span></span>
@@ -201,8 +303,12 @@ useful for debugging or building progress indicators.</p>
 <div class="section level2">
 <h2 id="visualizing-the-graph">Visualizing the Graph<a class="anchor" aria-label="anchor" href="#visualizing-the-graph"></a>
 </h2>
-<p>Generate a Mermaid diagram to visualize the graph structure.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p>Understanding the topology of a graph is easier with a visual
+representation. <code><a href="../reference/as_mermaid.html">as_mermaid()</a></code> generates a Mermaid diagram
+string that you can render in any Mermaid-compatible viewer (GitHub
+markdown, pkgdown sites, Quarto documents, or the Mermaid live
+editor).</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">supervisor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"supervisor"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"You coordinate workers."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
@@ -228,6 +334,24 @@ useful for debugging or building progress indicators.</p>
 <span><span class="co">#     supervisor --&gt;|writing| writing</span></span>
 <span><span class="co">#     math --&gt; supervisor</span></span>
 <span><span class="co">#     writing --&gt; supervisor</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+</h2>
+<ul>
+<li>
+<strong><a href="quickstart.html">Getting Started</a></strong> –
+single-agent basics and provider setup</li>
+<li>
+<strong><a href="securer.html">Secure Execution</a></strong> –
+sandboxed code execution with securer</li>
+<li>
+<strong><a href="tracing.html">Traced Workflows</a></strong> –
+observability with securetrace</li>
+<li>
+<strong><a href="governed-agent.html">Governed Agent</a></strong> –
+the full 7-package stack</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
