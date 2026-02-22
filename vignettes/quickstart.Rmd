@@ -37,6 +37,36 @@ Sys.setenv(OPENAI_API_KEY = "your-key-here")
 
 See ellmer's documentation for all supported providers.
 
+## Using Different Providers
+
+orchestr works with any ellmer chat backend. Pass the appropriate `chat_*()`
+constructor to `agent()`:
+
+```{r providers}
+library(orchestr)
+library(ellmer)
+
+# OpenAI
+agent("analyst", chat = chat_openai(model = "gpt-4o"))
+
+# Google Gemini
+agent("analyst", chat = chat_google_gemini(model = "gemini-1.5-pro"))
+
+# Claude via AWS Bedrock
+agent("analyst", chat = chat_aws_bedrock(
+  model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+))
+
+# GPT-4o via Azure OpenAI
+agent("analyst", chat = chat_azure_openai(
+  endpoint = "https://my-resource.openai.azure.com",
+  deployment_id = "gpt-4o"
+))
+```
+
+All graph types (`react_graph()`, `pipeline_graph()`, `supervisor_graph()`)
+work identically regardless of which provider backs the agent.
+
 ## Your First Agent
 
 An `Agent` wraps an ellmer `Chat` object. The `agent()` constructor is the
