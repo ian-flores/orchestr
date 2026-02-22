@@ -1,5 +1,12 @@
 # orchestr
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/ian-flores/orchestr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ian-flores/orchestr/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/ian-flores/orchestr/graph/badge.svg)](https://app.codecov.io/gh/ian-flores/orchestr)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![pkgdown](https://github.com/ian-flores/orchestr/actions/workflows/pkgdown.yaml/badge.svg)](https://ian-flores.github.io/orchestr/)
+<!-- badges: end -->
+
 > [!CAUTION]
 > **Alpha software.** This package is part of a broader effort by [Ian Flores Siaca](https://github.com/ian-flores) to develop proper AI infrastructure for the R ecosystem. It is under active development and should **not** be used in production until an official release is published. APIs may change without notice.
 
@@ -7,6 +14,10 @@ Graph-based multi-agent workflow orchestration for R. Built on
 [ellmer](https://github.com/tidyverse/ellmer) for LLM chat and
 optionally [securer](https://github.com/ian-flores/securer) for
 sandboxed code execution.
+
+## When to use orchestr
+
+Use orchestr when a single ellmer chat isn't enough -- when you need multi-step reasoning (ReAct loops), parallel tool execution, supervisor-routed agent teams, or persistent memory across turns. If your workflow fits in one LLM call, use ellmer directly. If it needs orchestration, use orchestr.
 
 ## Part of the secure-r-dev Ecosystem
 
@@ -47,8 +58,8 @@ orchestr is the orchestration hub that wires agents into workflows. It sits belo
 ## Installation
 
 ```r
-# install.packages("remotes")
-remotes::install_github("ian-flores/orchestr")
+# install.packages("pak")
+pak::pak("ian-flores/orchestr")
 ```
 
 ## Setup
@@ -154,6 +165,10 @@ Each node in a graph that calls an LLM makes an API request. Be mindful of costs
 - [Getting Started](https://ian-flores.github.io/orchestr/articles/quickstart.html)
 - [Multi-Agent Workflows](https://ian-flores.github.io/orchestr/articles/multi-agent.html)
 - [Secure Execution](https://ian-flores.github.io/orchestr/articles/securer.html)
+
+## Contributing
+
+Contributions are welcome! Please file issues on GitHub and submit pull requests.
 
 ## License
 
