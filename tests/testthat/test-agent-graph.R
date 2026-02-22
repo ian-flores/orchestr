@@ -109,13 +109,13 @@ test_that("stream() returns state snapshots", {
   ag <- build_linear_graph()
   snapshots <- ag$stream(list(value = 0))
   expect_length(snapshots, 2)
-  expect_s3_class(snapshots[[1]], "state_snapshot")
-  expect_s3_class(snapshots[[2]], "state_snapshot")
-  expect_equal(snapshots[[1]]$node, "a")
-  expect_equal(snapshots[[1]]$step, 1L)
-  expect_equal(snapshots[[2]]$node, "b")
-  expect_equal(snapshots[[2]]$step, 2L)
-  expect_equal(snapshots[[2]]$state$value, 2)
+  expect_true(S7::S7_inherits(snapshots[[1]], state_snapshot_class))
+  expect_true(S7::S7_inherits(snapshots[[2]], state_snapshot_class))
+  expect_equal(snapshots[[1]]@node, "a")
+  expect_equal(snapshots[[1]]@step, 1L)
+  expect_equal(snapshots[[2]]@node, "b")
+  expect_equal(snapshots[[2]]@step, 2L)
+  expect_equal(snapshots[[2]]@state$value, 2)
 })
 
 test_that("stream() on_step callback is invoked for each step", {
@@ -127,9 +127,9 @@ test_that("stream() on_step callback is invoked for each step", {
 
   snapshots <- ag$stream(list(value = 0), on_step = callback)
   expect_length(received_snapshots, 2L)
-  expect_s3_class(received_snapshots[[1]], "state_snapshot")
-  expect_equal(received_snapshots[[1]]$node, "a")
-  expect_equal(received_snapshots[[2]]$node, "b")
+  expect_true(S7::S7_inherits(received_snapshots[[1]], state_snapshot_class))
+  expect_equal(received_snapshots[[1]]@node, "a")
+  expect_equal(received_snapshots[[2]]@node, "b")
 })
 
 

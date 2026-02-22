@@ -155,7 +155,25 @@ state_schema <- function(..., .max_append = Inf) {
 }
 
 
-# ---- state_snapshot S3 class ----
+# ---- state_snapshot S7 class ----
+
+#' State snapshot S7 class
+#'
+#' Records the state at a particular node and step in graph execution.
+#'
+#' @param state Named list of current state.
+#' @param node Character string naming the node.
+#' @param step Integer step number.
+#' @examples
+#' snap <- state_snapshot_class(state = list(x = 1), node = "a", step = 1L)
+#' snap@node
+#' snap@step
+#' @export
+state_snapshot_class <- S7::new_class("state_snapshot", properties = list(
+  state = S7::class_any,
+  node = S7::class_character,
+  step = S7::class_any
+))
 
 #' Create a state snapshot
 #'
@@ -164,8 +182,12 @@ state_schema <- function(..., .max_append = Inf) {
 #' @param state Named list of current state
 #' @param node Character string naming the node
 #' @param step Integer step number
-#' @return A \code{state_snapshot} S3 object.
+#' @return A \code{state_snapshot} S7 object.
 #' @export
+#' @examples
+#' snap <- new_state_snapshot(list(messages = list("hi")), "agent", 1L)
+#' snap@node
+#' snap@step
 new_state_snapshot <- function(state, node, step) {
   if (!is.list(state)) {
     rlang::abort("`state` must be a list.", call = NULL)
@@ -176,24 +198,19 @@ new_state_snapshot <- function(state, node, step) {
   if (!is.numeric(step) || length(step) != 1L) {
     rlang::abort("`step` must be a single number.", call = NULL)
   }
-  structure(
-    list(state = state, node = node, step = as.integer(step)),
-    class = "state_snapshot"
-  )
+  state_snapshot_class(state = state, node = node, step = as.integer(step))
 }
 
-#' @export
-format.state_snapshot <- function(x, ...) {
+S7::method(format, state_snapshot_class) <- function(x, ...) {
   paste0(
     "<state_snapshot>\n",
-    "  Node: ", x$node, "\n",
-    "  Step: ", x$step, "\n",
-    "  State keys: ", paste(names(x$state), collapse = ", "), "\n"
+    "  Node: ", x@node, "\n",
+    "  Step: ", x@step, "\n",
+    "  State keys: ", paste(names(x@state), collapse = ", "), "\n"
   )
 }
 
-#' @export
-print.state_snapshot <- function(x, ...) {
+S7::method(print, state_snapshot_class) <- function(x, ...) {
   cat(format(x, ...), sep = "")
   invisible(x)
 }

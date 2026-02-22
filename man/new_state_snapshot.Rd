@@ -14,8 +14,13 @@ new_state_snapshot(state, node, step)
 \item{step}{Integer step number}
 }
 \value{
-A \code{state_snapshot} S3 object.
+A \code{state_snapshot} S7 object.
 }
 \description{
 Records the state at a particular node and step in graph execution.
+}
+\examples{
+snap <- new_state_snapshot(list(messages = list("hi")), "agent", 1L)
+snap@node
+snap@step
 }

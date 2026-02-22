@@ -14,6 +14,13 @@ END
 Use \code{END} as a target node name to indicate that graph execution should
 stop after the current node.
 }
+\examples{
+# Use END as the target of a graph edge to stop execution
+END
+g <- graph_builder()
+g$add_node("a", function(state, config) list(x = 1))
+g$add_edge("a", END)
+}
 \seealso{
 Other graph-building: 
 \code{\link{graph_builder}()},

@@ -2,7 +2,7 @@ Package: orchestr
 Title: Graph-Based Agent Orchestration for R
 Version: 0.1.0
 Authors@R:
-    person("Ian", "Flores Siaca", , "ian.flores.siaca@gmail.com",
+    person("Ian", "Flores Siaca", , "iflores.siaca@hey.com",
            role = c("aut", "cre"))
 Description: Graph-based multi-agent workflow orchestration built on
     'ellmer' for LLM chat and optional 'securer' for sandboxed code
@@ -11,19 +11,24 @@ Description: Graph-based multi-agent workflow orchestration built on
     memory, and checkpointing. Convenience constructors cover common
     patterns: ReAct loops, sequential pipelines, and supervisor routing.
 License: MIT + file LICENSE
-URL: https://github.com/ian-flores/orchestr,
-    https://ian-flores.github.io/orchestr/
+URL: https://ian-flores.github.io/orchestr/,
+    https://github.com/ian-flores/orchestr
 BugReports: https://github.com/ian-flores/orchestr/issues
+Depends:
+    R (>= 4.1.0)
 Encoding: UTF-8
+Language: en-US
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Config/Needs/website: pkgdown
 Imports:
     cli,
     ellmer (>= 0.4.0),
     jsonlite,
     methods,
     R6,
-    rlang (>= 1.1.0)
+    rlang (>= 1.1.0),
+    S7
 Suggests:
     knitr,
     rmarkdown,

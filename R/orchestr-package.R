@@ -1,6 +1,7 @@
 #' @keywords internal
 "_PACKAGE"
 
+#' @import S7
 #' @importFrom rlang abort warn inform check_installed is_installed is_named
 #'   arg_match %||% signal cnd
 #' @importFrom cli cli_h3 cli_ul cli_li cli_end
@@ -17,4 +18,10 @@ NULL
 #'
 #' @family graph-building
 #' @export
+#' @examples
+#' # Use END as the target of a graph edge to stop execution
+#' END
+#' g <- graph_builder()
+#' g$add_node("a", function(state, config) list(x = 1))
+#' g$add_edge("a", END)
 END <- "__end__"

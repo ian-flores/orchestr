@@ -11,13 +11,14 @@ Graph-based multi-agent workflow orchestration built on 'ellmer' for LLM chat an
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://ian-flores.github.io/orchestr/}
   \item \url{https://github.com/ian-flores/orchestr}
   \item Report bugs at \url{https://github.com/ian-flores/orchestr/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Ian Flores Siaca \email{ian.flores.siaca@gmail.com}
+\strong{Maintainer}: Ian Flores Siaca \email{iflores.siaca@hey.com}
 
 }
 \keyword{internal}

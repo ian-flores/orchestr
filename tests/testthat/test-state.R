@@ -136,14 +136,14 @@ test_that("max_append does not affect overwrite reducer", {
 })
 
 
-# ---- state_snapshot S3 class ----
+# ---- state_snapshot S7 class ----
 
 test_that("new_state_snapshot() creates correct structure", {
   snap <- new_state_snapshot(list(x = 1), "node_a", 3)
-  expect_s3_class(snap, "state_snapshot")
-  expect_equal(snap$state, list(x = 1))
-  expect_equal(snap$node, "node_a")
-  expect_equal(snap$step, 3L)
+  expect_true(S7::S7_inherits(snap, state_snapshot_class))
+  expect_equal(snap@state, list(x = 1))
+  expect_equal(snap@node, "node_a")
+  expect_equal(snap@step, 3L)
 })
 
 test_that("new_state_snapshot() validates inputs", {
