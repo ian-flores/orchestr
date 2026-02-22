@@ -24,4 +24,14 @@ new_state_snapshot(state, node, step)
 
 ## Value
 
-A `state_snapshot` S3 object.
+A `state_snapshot` S7 object.
+
+## Examples
+
+``` r
+snap <- new_state_snapshot(list(messages = list("hi")), "agent", 1L)
+snap@node
+#> [1] "agent"
+snap@step
+#> [1] 1
+```

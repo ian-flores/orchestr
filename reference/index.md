@@ -16,6 +16,8 @@
 
 - [`state_schema()`](https://ian-flores.github.io/orchestr/reference/state_schema.md)
   : Create a typed state schema
+- [`state_snapshot_class()`](https://ian-flores.github.io/orchestr/reference/state_snapshot_class.md)
+  : State snapshot S7 class
 - [`new_state_snapshot()`](https://ian-flores.github.io/orchestr/reference/new_state_snapshot.md)
   : Create a state snapshot
 

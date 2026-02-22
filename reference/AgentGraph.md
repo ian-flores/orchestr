@@ -106,7 +106,12 @@ Run the graph to completion
 
 #### Usage
 
-    AgentGraph$invoke(state = list(), config = list(), verbose = private$.verbose)
+    AgentGraph$invoke(
+      state = list(),
+      config = list(),
+      verbose = private$.verbose,
+      trace = NULL
+    )
 
 #### Arguments
 
@@ -122,6 +127,13 @@ Run the graph to completion
 
   Logical; if `TRUE`, log execution details. Overrides the graph-level
   default set at compile time.
+
+- `trace`:
+
+  Optional
+  [`securetrace::Trace`](https://ian-flores.github.io/securetrace/reference/Trace.html)
+  object. When provided and the securetrace package is installed, each
+  node execution is wrapped in a span named `"node:{name}"`.
 
 #### Returns
 
@@ -139,7 +151,8 @@ Run the graph and collect state snapshots
       state = list(),
       config = list(),
       on_step = NULL,
-      verbose = private$.verbose
+      verbose = private$.verbose,
+      trace = NULL
     )
 
 #### Arguments
@@ -161,6 +174,13 @@ Run the graph and collect state snapshots
 
   Logical; if `TRUE`, log execution details. Overrides the graph-level
   default set at compile time.
+
+- `trace`:
+
+  Optional
+  [`securetrace::Trace`](https://ian-flores.github.io/securetrace/reference/Trace.html)
+  object. When provided and the securetrace package is installed, each
+  node execution is wrapped in a span named `"node:{name}"`.
 
 #### Returns
 

@@ -1,11 +1,13 @@
-pandoc: 3.1.3
+pandoc: 3.1.11
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
+  governed-agent: governed-agent.html
   multi-agent: multi-agent.html
   quickstart: quickstart.html
   securer: securer.html
-last_built: 2026-02-21T20:32Z
+  tracing: tracing.html
+last_built: 2026-02-22T01:57Z
 urls:
   reference: https://ian-flores.github.io/orchestr/reference
   article: https://ian-flores.github.io/orchestr/articles

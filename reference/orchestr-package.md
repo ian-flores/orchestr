@@ -11,10 +11,12 @@ pipelines, and supervisor routing.
 
 Useful links:
 
+- <https://ian-flores.github.io/orchestr/>
+
 - <https://github.com/ian-flores/orchestr>
 
 - Report bugs at <https://github.com/ian-flores/orchestr/issues>
 
 ## Author
 
-**Maintainer**: Ian Flores Siaca <ian.flores.siaca@gmail.com>
+**Maintainer**: Ian Flores Siaca <iflores.siaca@hey.com>
