@@ -33,9 +33,11 @@ Suggests:
     knitr,
     rmarkdown,
     securer (>= 0.1.0),
+    securetrace (>= 0.1.0),
     testthat (>= 3.0.0),
     withr
 Remotes:
-    ian-flores/securer
+    ian-flores/securer,
+    ian-flores/securetrace
 Config/testthat/edition: 3
 VignetteBuilder: knitr

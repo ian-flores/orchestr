@@ -81,7 +81,12 @@ routing decisions, and iteration count via \code{\link[cli:cli_abort]{cli::cli_i
 \subsection{Method \code{invoke()}}{
 Run the graph to completion
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{AgentGraph$invoke(state = list(), config = list(), verbose = private$.verbose)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{AgentGraph$invoke(
+  state = list(),
+  config = list(),
+  verbose = private$.verbose,
+  trace = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -93,6 +98,10 @@ Run the graph to completion
 
 \item{\code{verbose}}{Logical; if \code{TRUE}, log execution details. Overrides the
 graph-level default set at compile time.}
+
+\item{\code{trace}}{Optional \code{securetrace::Trace} object. When provided and the
+securetrace package is installed, each node execution is wrapped in a
+span named \code{"node:{name}"}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -110,7 +119,8 @@ Run the graph and collect state snapshots
   state = list(),
   config = list(),
   on_step = NULL,
-  verbose = private$.verbose
+  verbose = private$.verbose,
+  trace = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -126,6 +136,10 @@ snapshot as its sole argument. Useful for real-time progress reporting.}
 
 \item{\code{verbose}}{Logical; if \code{TRUE}, log execution details. Overrides the
 graph-level default set at compile time.}
+
+\item{\code{trace}}{Optional \code{securetrace::Trace} object. When provided and the
+securetrace package is installed, each node execution is wrapped in a
+span named \code{"node:{name}"}.}
 }
 \if{html}{\out{</div>}}
 }

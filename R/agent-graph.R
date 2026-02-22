@@ -54,11 +54,21 @@ AgentGraph <- R6::R6Class(
     #' @param config Named list of configuration (e.g., thread_id, resume_from)
     #' @param verbose Logical; if `TRUE`, log execution details. Overrides the
     #'   graph-level default set at compile time.
+    #' @param trace Optional `securetrace::Trace` object. When provided and the
+    #'   securetrace package is installed, each node execution is wrapped in a
+    #'   span named `"node:{name}"`.
     #' @return Final state as a named list
-    invoke = function(state = list(), config = list(), verbose = private$.verbose) {
+    invoke = function(state = list(), config = list(), verbose = private$.verbose,
+                      trace = NULL) {
       # Convenience: auto-wrap a plain string into messages state
       if (is.character(state) && length(state) == 1L) {
         state <- list(messages = list(state))
+      }
+
+      # Tracing setup
+      .use_tracing <- !is.null(trace) && rlang::is_installed("securetrace")
+      if (!is.null(trace) && !rlang::is_installed("securetrace")) {
+        cli::cli_warn("securetrace is not installed; tracing disabled. Install with: {.code pak::pak('ian-flores/securetrace')}")
       }
 
       # Try to resume from checkpoint
@@ -89,15 +99,38 @@ AgentGraph <- R6::R6Class(
           private$signal_interrupt(state, current_node, step)
         }
 
-        # Run node handler
-        if (verbose) {
-          t0 <- proc.time()[[3L]]
-          state <- private$run_node(current_node, state, config)
-          elapsed <- proc.time()[[3L]] - t0
-          cli::cli_inform("Node {.val {current_node}} completed in {round(elapsed, 2)}s")
-        } else {
-          state <- private$run_node(current_node, state, config)
+        # Start tracing span for this node
+        if (.use_tracing) {
+          .span <- securetrace::Span$new(
+            name = paste0("node:", current_node),
+            type = "custom",
+            metadata = list(node = current_node, step = step)
+          )
+          .span$start()
+          trace$add_span(.span)
         }
+
+        # Run node handler
+        tryCatch(
+          {
+            if (verbose) {
+              t0 <- proc.time()[[3L]]
+              state <- private$run_node(current_node, state, config)
+              elapsed <- proc.time()[[3L]] - t0
+              cli::cli_inform("Node {.val {current_node}} completed in {round(elapsed, 2)}s")
+            } else {
+              state <- private$run_node(current_node, state, config)
+            }
+            if (.use_tracing) .span$end()
+          },
+          error = function(e) {
+            if (.use_tracing) {
+              .span$set_error(e)
+              .span$end(status = "error")
+            }
+            stop(e)
+          }
+        )
         step <- step + 1L
 
         # Checkpoint after node execution
@@ -132,12 +165,21 @@ AgentGraph <- R6::R6Class(
     #'   snapshot as its sole argument. Useful for real-time progress reporting.
     #' @param verbose Logical; if `TRUE`, log execution details. Overrides the
     #'   graph-level default set at compile time.
+    #' @param trace Optional `securetrace::Trace` object. When provided and the
+    #'   securetrace package is installed, each node execution is wrapped in a
+    #'   span named `"node:{name}"`.
     #' @return List of `state_snapshot` objects
     stream = function(state = list(), config = list(), on_step = NULL,
-                      verbose = private$.verbose) {
+                      verbose = private$.verbose, trace = NULL) {
       # Convenience: auto-wrap a plain string into messages state
       if (is.character(state) && length(state) == 1L) {
         state <- list(messages = list(state))
+      }
+
+      # Tracing setup
+      .use_tracing <- !is.null(trace) && rlang::is_installed("securetrace")
+      if (!is.null(trace) && !rlang::is_installed("securetrace")) {
+        cli::cli_warn("securetrace is not installed; tracing disabled. Install with: {.code pak::pak('ian-flores/securetrace')}")
       }
 
       current_node <- private$entry
@@ -172,14 +214,37 @@ AgentGraph <- R6::R6Class(
           private$signal_interrupt(state, current_node, step)
         }
 
-        if (verbose) {
-          t0 <- proc.time()[[3L]]
-          state <- private$run_node(current_node, state, config)
-          elapsed <- proc.time()[[3L]] - t0
-          cli::cli_inform("Node {.val {current_node}} completed in {round(elapsed, 2)}s")
-        } else {
-          state <- private$run_node(current_node, state, config)
+        # Start tracing span for this node
+        if (.use_tracing) {
+          .span <- securetrace::Span$new(
+            name = paste0("node:", current_node),
+            type = "custom",
+            metadata = list(node = current_node, step = step)
+          )
+          .span$start()
+          trace$add_span(.span)
         }
+
+        tryCatch(
+          {
+            if (verbose) {
+              t0 <- proc.time()[[3L]]
+              state <- private$run_node(current_node, state, config)
+              elapsed <- proc.time()[[3L]] - t0
+              cli::cli_inform("Node {.val {current_node}} completed in {round(elapsed, 2)}s")
+            } else {
+              state <- private$run_node(current_node, state, config)
+            }
+            if (.use_tracing) .span$end()
+          },
+          error = function(e) {
+            if (.use_tracing) {
+              .span$set_error(e)
+              .span$end(status = "error")
+            }
+            stop(e)
+          }
+        )
         step <- step + 1L
 
         # Checkpoint after node execution
