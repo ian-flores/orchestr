@@ -12,6 +12,7 @@ reference:
   - title: State
     contents:
       - state_schema
+      - state_snapshot_class
       - new_state_snapshot
   - title: Node Helpers
     contents:
