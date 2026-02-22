@@ -39,7 +39,11 @@ articles:
   - title: Getting Started
     contents:
       - quickstart
+      - governed-agent
   - title: Advanced
     contents:
       - multi-agent
       - securer
+  - title: Observability
+    contents:
+      - tracing
