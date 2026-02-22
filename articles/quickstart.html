@@ -81,12 +81,41 @@ Set your provider’s API key before running any examples:</p>
 <p>See ellmer’s documentation for all supported providers.</p>
 </div>
 <div class="section level2">
+<h2 id="using-different-providers">Using Different Providers<a class="anchor" aria-label="anchor" href="#using-different-providers"></a>
+</h2>
+<p>orchestr works with any ellmer chat backend. Pass the appropriate
+<code>chat_*()</code> constructor to <code><a href="../reference/Agent.html">agent()</a></code>:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/orchestr/">orchestr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ellmer.tidyverse.org" class="external-link">ellmer</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># OpenAI</span></span>
+<span><span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"analyst"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_openai.html" class="external-link">chat_openai</a></span><span class="op">(</span>model <span class="op">=</span> <span class="st">"gpt-4o"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Google Gemini</span></span>
+<span><span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"analyst"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_google_gemini.html" class="external-link">chat_google_gemini</a></span><span class="op">(</span>model <span class="op">=</span> <span class="st">"gemini-1.5-pro"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Claude via AWS Bedrock</span></span>
+<span><span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"analyst"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_aws_bedrock.html" class="external-link">chat_aws_bedrock</a></span><span class="op">(</span></span>
+<span>  model <span class="op">=</span> <span class="st">"anthropic.claude-3-5-sonnet-20241022-v2:0"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># GPT-4o via Azure OpenAI</span></span>
+<span><span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"analyst"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_azure_openai.html" class="external-link">chat_azure_openai</a></span><span class="op">(</span></span>
+<span>  endpoint <span class="op">=</span> <span class="st">"https://my-resource.openai.azure.com"</span>,</span>
+<span>  deployment_id <span class="op">=</span> <span class="st">"gpt-4o"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>All graph types (<code><a href="../reference/react_graph.html">react_graph()</a></code>,
+<code><a href="../reference/pipeline_graph.html">pipeline_graph()</a></code>, <code><a href="../reference/supervisor_graph.html">supervisor_graph()</a></code>) work
+identically regardless of which provider backs the agent.</p>
+</div>
+<div class="section level2">
 <h2 id="your-first-agent">Your First Agent<a class="anchor" aria-label="anchor" href="#your-first-agent"></a>
 </h2>
 <p>An <code>Agent</code> wraps an ellmer <code>Chat</code> object. The
 <code><a href="../reference/Agent.html">agent()</a></code> constructor is the recommended way to create
 one.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/orchestr/">orchestr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ellmer.tidyverse.org" class="external-link">ellmer</a></span><span class="op">)</span></span>
 <span></span>
@@ -105,7 +134,7 @@ one.</p>
 <code>Chat</code> class handles tool call loops internally – when an
 agent has registered tools, they are executed automatically during
 <code>$chat()</code>.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">summary_tool</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link">tool</a></span><span class="op">(</span></span>
 <span>  <span class="kw">function</span><span class="op">(</span><span class="va">dataset_name</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/get.html" class="external-link">get</a></span><span class="op">(</span><span class="va">dataset_name</span>, envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ns-internal.html" class="external-link">asNamespace</a></span><span class="op">(</span><span class="st">"datasets"</span><span class="op">)</span><span class="op">)</span></span>
@@ -133,7 +162,7 @@ agent has registered tools, they are executed automatically during
 <p>The <code><a href="../reference/react_graph.html">react_graph()</a></code> function wraps a single agent with
 state management and checkpointing. This is the simplest way to run an
 agent inside a graph.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">analyst</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"analyst"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"You are a data analyst. Analyze data and provide insights."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
@@ -145,7 +174,7 @@ agent inside a graph.</p>
 <p>Use <code>verbose = TRUE</code> when compiling to see execution flow.
 With the convenience functions, pass <code>verbose</code> to
 <code>$invoke()</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">graph</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Describe the distribution of mpg in mtcars."</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -156,7 +185,7 @@ With the convenience functions, pass <code>verbose</code> to
 </h2>
 <p>Chain multiple agents in sequence. Each agent processes the state and
 passes it to the next. One LLM call per agent.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">profiler</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"profiler"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"Profile datasets: describe columns, types, missing values, distributions."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
