@@ -54,9 +54,7 @@ For securetrace fundamentals, see
 ## Installation
 
 ``` r
-# install.packages("pak")
-pak::pak("ian-flores/orchestr")
-pak::pak("ian-flores/securetrace")
+install.packages(c("orchestr", "securetrace"))
 ```
 
 ## Basic Tracing

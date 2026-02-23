@@ -13,6 +13,10 @@ END
 
 An object of class `character` of length 1.
 
+## Value
+
+A character string (`"__end__"`) used as a sentinel value.
+
 ## See also
 
 Other graph-building:

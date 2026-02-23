@@ -22,6 +22,10 @@ state_snapshot_class(state = NULL, node = character(0), step = NULL)
 
   Integer step number.
 
+## Value
+
+An S7 `state_snapshot` object.
+
 ## Examples
 
 ``` r

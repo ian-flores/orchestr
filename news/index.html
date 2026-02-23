@@ -36,6 +36,22 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="orchestr-010">orchestr 0.1.0<a class="anchor" aria-label="anchor" href="#orchestr-010"></a></h2>
 <ul><li>Initial CRAN release.</li>
+<li>
+<code>Agent</code> R6 class wrapping ellmer <code>Chat</code> objects with optional securer sandbox integration.</li>
+<li>
+<code>GraphBuilder</code> fluent API for constructing agent graphs with typed state, conditional routing, and human-in-the-loop interrupts.</li>
+<li>
+<code>AgentGraph</code> compiled graph runtime with <code>$invoke()</code> and <code>$stream()</code> methods.</li>
+<li>
+<code>StateSchema</code> typed state with overwrite and append reducers.</li>
+<li>Convenience constructors: <code><a href="../reference/react_graph.html">react_graph()</a></code>, <code><a href="../reference/pipeline_graph.html">pipeline_graph()</a></code>, <code><a href="../reference/supervisor_graph.html">supervisor_graph()</a></code>.</li>
+<li>
+<code>Memory</code> R6 class for key-value persistence (memory and file backends).</li>
+<li>
+<code>Checkpointer</code> R6 class for workflow state persistence (memory and file backends using JSONL format).</li>
+<li>
+<code><a href="../reference/as_mermaid.html">as_mermaid()</a></code> for graph visualization.</li>
+<li>Optional securetrace integration for structured tracing of graph execution.</li>
 </ul></div>
   </main></div>
 

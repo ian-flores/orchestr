@@ -64,8 +64,7 @@ a framework for composing multiple agents into governed workflows.
 ## Installation
 
 ``` r
-# install.packages("remotes")
-remotes::install_github("ian-flores/orchestr")
+install.packages("orchestr")
 ```
 
 ## API Key Setup

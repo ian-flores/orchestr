@@ -128,8 +128,8 @@ result <- graph$invoke(list(
 The calculator restricts evaluation to arithmetic and math functions via
 AST validation. The file reader resolves symlinks and validates paths
 against the `allowed_dirs` allowlist. See
-`vignette("agent-integration", package = "securetools")` for the full
-tool catalog.
+[`vignette("agent-integration", package = "securetools")`](https://ian-flores.github.io/securetools/articles/agent-integration.html)
+for the full tool catalog.
 
 ## Step 3: Guard the Agent
 
@@ -141,7 +141,8 @@ them. Code guards validate generated code before execution. Output
 guards sanitize responses before they reach the user.
 
 secureguard provides three layers of guardrails – input, code, and
-output – that compose into a `secure_pipeline()`.
+output – that compose into a
+[`secure_pipeline()`](https://ian-flores.github.io/secureguard/reference/secure_pipeline.html).
 
 ``` r
 library(secureguard)
@@ -223,7 +224,8 @@ call, the sandbox prevents it from succeeding.
 
 securer runs agent-generated code in an isolated child process with
 OS-level sandboxing (Seatbelt on macOS, bubblewrap on Linux). Combine it
-with secureguard’s code guardrails via `as_pre_execute_hook()`:
+with secureguard’s code guardrails via
+[`as_pre_execute_hook()`](https://ian-flores.github.io/secureguard/reference/as_pre_execute_hook.html):
 
 ``` r
 library(securer)
@@ -353,7 +355,7 @@ mem$get("q4_revenue")
 ```
 
 For the full RAG pipeline, see
-`vignette("orchestr-integration", package = "securecontext")`.
+[`vignette("orchestr-integration", package = "securecontext")`](https://ian-flores.github.io/securecontext/articles/orchestr-integration.html).
 
 ## Step 6: Instrument with Traces
 
@@ -494,8 +496,9 @@ metrics$f1
 #> [1] 1
 ```
 
-For more detailed evaluation, use `guardrail_eval()` with labeled
-datasets:
+For more detailed evaluation, use
+[`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.html)
+with labeled datasets:
 
 ``` r
 eval_data <- data.frame(
@@ -685,16 +688,16 @@ explicitly export.
 ## Next Steps
 
 - **securetools**:
-  `vignette("agent-integration", package = "securetools")` – full tool
-  catalog (SQL, plotting, fetch)
+  [`vignette("agent-integration", package = "securetools")`](https://ian-flores.github.io/securetools/articles/agent-integration.html)
+  – full tool catalog (SQL, plotting, fetch)
 - **secureguard**: `vignette("quickstart", package = "secureguard")` –
   custom guardrails and composition
 - **securer**:
   [`vignette("security-model", package = "securer")`](https://ian-flores.github.io/securer/articles/security-model.html)
   – threat model and sandbox architecture
 - **securecontext**:
-  `vignette("orchestr-integration", package = "securecontext")` – RAG
-  pipeline with orchestr agents
+  [`vignette("orchestr-integration", package = "securecontext")`](https://ian-flores.github.io/securecontext/articles/orchestr-integration.html)
+  – RAG pipeline with orchestr agents
 - **securetrace**:
   [`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html)
   – OTLP, Prometheus, and W3C propagation

@@ -1,11 +1,11 @@
-# orchestr: Graph-Based Agent Orchestration for R
+# orchestr: Graph-Based Agent Orchestration
 
-Graph-based multi-agent workflow orchestration built on 'ellmer' for LLM
-chat and optional 'securer' for sandboxed code execution. Provides a
-fluent API for constructing agent graphs with typed state, conditional
-routing, human-in-the-loop interrupts, memory, and checkpointing.
-Convenience constructors cover common patterns: ReAct loops, sequential
-pipelines, and supervisor routing.
+Graph-based multi-agent workflow orchestration built on 'ellmer' for
+Large Language Model (LLM) chat and optional 'securer' for sandboxed
+code execution. Provides a fluent API for constructing agent graphs with
+typed state, conditional routing, human-in-the-loop interrupts, memory,
+and checkpointing. Convenience constructors cover common patterns: ReAct
+loops, sequential pipelines, and supervisor routing.
 
 ## See also
 
@@ -19,4 +19,5 @@ Useful links:
 
 ## Author
 
-**Maintainer**: Ian Flores Siaca <iflores.siaca@hey.com>
+**Maintainer**: Ian Flores Siaca <iflores.siaca@hey.com> \[copyright
+holder\]

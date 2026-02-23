@@ -58,9 +58,7 @@ blocks it.
 ## Installation
 
 ``` r
-# Install both packages
-remotes::install_github("ian-flores/securer")
-remotes::install_github("ian-flores/orchestr")
+install.packages(c("securer", "orchestr"))
 ```
 
 ## Creating a Secure Agent
