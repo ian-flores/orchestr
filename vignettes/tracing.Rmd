@@ -65,10 +65,8 @@ see `vignette("observability", package = "securetrace")`.
 
 ## Installation
 
-```{r}
-# install.packages("pak")
-pak::pak("ian-flores/orchestr")
-pak::pak("ian-flores/securetrace")
+```r
+install.packages(c("orchestr", "securetrace"))
 ```
 
 ## Basic Tracing

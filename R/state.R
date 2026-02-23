@@ -164,6 +164,7 @@ state_schema <- function(..., .max_append = Inf) {
 #' @param state Named list of current state.
 #' @param node Character string naming the node.
 #' @param step Integer step number.
+#' @return An S7 `state_snapshot` object.
 #' @examples
 #' snap <- state_snapshot_class(state = list(x = 1), node = "a", step = 1L)
 #' snap@node

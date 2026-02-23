@@ -68,10 +68,8 @@ socket. If the child attempts a forbidden operation, the OS blocks it.
 
 ## Installation
 
-```{r install}
-# Install both packages
-remotes::install_github("ian-flores/securer")
-remotes::install_github("ian-flores/orchestr")
+```r
+install.packages(c("securer", "orchestr"))
 ```
 
 ## Creating a Secure Agent

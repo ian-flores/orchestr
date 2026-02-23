@@ -10,6 +10,9 @@ An object of class \code{character} of length 1.
 \usage{
 END
 }
+\value{
+A character string (\code{"__end__"}) used as a sentinel value.
+}
 \description{
 Use \code{END} as a target node name to indicate that graph execution should
 stop after the current node.

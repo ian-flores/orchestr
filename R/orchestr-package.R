@@ -16,6 +16,7 @@ NULL
 #' Use `END` as a target node name to indicate that graph execution should
 #' stop after the current node.
 #'
+#' @return A character string (`"__end__"`) used as a sentinel value.
 #' @family graph-building
 #' @export
 #' @examples

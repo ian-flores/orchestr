@@ -4,9 +4,9 @@
 \name{orchestr-package}
 \alias{orchestr}
 \alias{orchestr-package}
-\title{orchestr: Graph-Based Agent Orchestration for R}
+\title{orchestr: Graph-Based Agent Orchestration}
 \description{
-Graph-based multi-agent workflow orchestration built on 'ellmer' for LLM chat and optional 'securer' for sandboxed code execution. Provides a fluent API for constructing agent graphs with typed state, conditional routing, human-in-the-loop interrupts, memory, and checkpointing. Convenience constructors cover common patterns: ReAct loops, sequential pipelines, and supervisor routing.
+Graph-based multi-agent workflow orchestration built on 'ellmer' for Large Language Model (LLM) chat and optional 'securer' for sandboxed code execution. Provides a fluent API for constructing agent graphs with typed state, conditional routing, human-in-the-loop interrupts, memory, and checkpointing. Convenience constructors cover common patterns: ReAct loops, sequential pipelines, and supervisor routing.
 }
 \seealso{
 Useful links:
@@ -18,7 +18,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Ian Flores Siaca \email{iflores.siaca@hey.com}
+\strong{Maintainer}: Ian Flores Siaca \email{iflores.siaca@hey.com} [copyright holder]
 
 }
 \keyword{internal}

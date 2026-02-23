@@ -13,6 +13,9 @@ state_snapshot_class(state = NULL, node = character(0), step = NULL)
 
 \item{step}{Integer step number.}
 }
+\value{
+An S7 \code{state_snapshot} object.
+}
 \description{
 Records the state at a particular node and step in graph execution.
 }
