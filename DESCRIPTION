@@ -43,6 +43,10 @@ Suggests:
     withr
 Remotes:
     ian-flores/securer,
-    ian-flores/securetrace
+    ian-flores/securetrace,
+    ian-flores/secureguard,
+    ian-flores/securetools,
+    ian-flores/securecontext,
+    ian-flores/securebench
 Config/testthat/edition: 3
 VignetteBuilder: knitr
