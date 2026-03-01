@@ -99,7 +99,11 @@ test_that("max_iterations prevents infinite loops", {
   g$set_entry_point("loop")
   ag <- g$compile(max_iterations = 5L)
 
-  expect_error(ag$invoke(list(i = 0)), "max_iterations")
+  expect_warning(
+    result <- ag$invoke(list(i = 0)),
+    "max_iterations"
+  )
+  expect_true(result$.__graph_truncated__)
 })
 
 
@@ -362,4 +366,87 @@ test_that("resume_from restarts at specified node", {
     resume_from = list(node = "b", state = list(value = 5))
   ))
   expect_equal(result$value, 50)
+})
+
+
+# ---- Graceful max_iterations truncation ----
+
+test_that("invoke warns and returns truncated state on max_iterations", {
+  g <- graph_builder()
+  g$add_node("loop", function(state, config) {
+    list(i = state$i + 1)
+  })
+  g$add_edge("loop", "loop")
+  g$set_entry_point("loop")
+  ag <- g$compile(max_iterations = 5L)
+
+  expect_warning(
+    result <- ag$invoke(list(i = 0)),
+    "max_iterations"
+  )
+  expect_true(result$.__graph_truncated__)
+  expect_equal(result$i, 5)
+})
+
+test_that("stream warns and returns partial snapshots on max_iterations", {
+  g <- graph_builder()
+  g$add_node("loop", function(state, config) {
+    list(i = state$i + 1)
+  })
+  g$add_edge("loop", "loop")
+  g$set_entry_point("loop")
+  ag <- g$compile(max_iterations = 3L)
+
+  expect_warning(
+    snapshots <- ag$stream(list(i = 0)),
+    "max_iterations"
+  )
+  expect_length(snapshots, 3)
+})
+
+
+# ---- Dynamic snapshot allocation ----
+
+test_that("stream with large max_iterations does not OOM on allocation", {
+  g <- graph_builder()
+  g$add_node("a", function(state, config) list(value = 1))
+  g$add_edge("a", "__end__")
+  g$set_entry_point("a")
+  # Large max_iterations but graph terminates after 1 step
+  ag <- g$compile(max_iterations = 1000000L)
+
+  snapshots <- ag$stream(list(value = 0))
+  expect_length(snapshots, 1)
+})
+
+test_that("stream grows snapshot buffer dynamically beyond initial cap", {
+  g <- graph_builder()
+  g$add_node("loop", function(state, config) list(i = state$i + 1))
+  g$add_conditional_edge(
+    "loop",
+    function(state) if (state$i >= 1500) "done" else "continue",
+    list(done = "__end__", continue = "loop")
+  )
+  g$set_entry_point("loop")
+  ag <- g$compile(max_iterations = 2000L)
+
+  snapshots <- ag$stream(list(i = 0))
+  # Should have exactly 1500 snapshots (i goes from 1 to 1500)
+  expect_length(snapshots, 1500)
+})
+
+
+# ---- max_iterations validation ----
+
+test_that("max_iterations must be a finite positive integer", {
+  g <- graph_builder()
+  g$add_node("a", function(s, c) list(x = 1))
+  g$add_edge("a", "__end__")
+  g$set_entry_point("a")
+
+  expect_error(g$compile(max_iterations = -1L), "finite positive integer")
+  expect_error(g$compile(max_iterations = 0L), "finite positive integer")
+  expect_error(g$compile(max_iterations = Inf), "finite positive integer")
+  expect_error(g$compile(max_iterations = NA_integer_), "finite positive integer")
+  expect_error(g$compile(max_iterations = "ten"), "finite positive integer")
 })

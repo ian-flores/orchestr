@@ -226,6 +226,15 @@ GraphBuilder <- R6::R6Class(
         ))
       }
 
+      # Validate max_iterations before coercion to avoid warnings from as.integer()
+      if (!is.numeric(max_iterations) || length(max_iterations) != 1L ||
+          !is.finite(max_iterations) || max_iterations < 1) {
+        rlang::abort(
+          "max_iterations must be a finite positive integer.",
+          call = NULL
+        )
+      }
+
       AgentGraph$new(
         nodes = private$nodes,
         edges = private$edges,

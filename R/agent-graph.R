@@ -27,6 +27,13 @@ AgentGraph <- R6::R6Class(
     initialize = function(nodes, edges, conditional_edges, entry, schema,
                           interrupt_before, interrupt_after, checkpointer,
                           max_iterations, verbose = FALSE) {
+      if (!is.numeric(max_iterations) || length(max_iterations) != 1L ||
+          !is.finite(max_iterations) || max_iterations < 1L) {
+        rlang::abort(
+          "max_iterations must be a finite positive integer.",
+          call = NULL
+        )
+      }
       private$nodes <- nodes
       private$edges <- edges
       private$conditional_edges <- conditional_edges
@@ -149,10 +156,11 @@ AgentGraph <- R6::R6Class(
       }
 
       if (step >= private$max_iterations && current_node != END) {
-        rlang::abort(
-          paste0("Graph exceeded max_iterations (", private$max_iterations, ")."),
-          call = NULL
+        cli::cli_warn(
+          "Graph exceeded max_iterations ({private$max_iterations}). Returning partial state."
         )
+        state$.__graph_truncated__ <- TRUE
+        return(state)
       }
 
       state
@@ -185,9 +193,10 @@ AgentGraph <- R6::R6Class(
       current_node <- private$entry
       step <- 0L
 
-      # Pre-allocate snapshot accumulator to avoid O(N^2) list growth
+      # Pre-allocate snapshot accumulator; cap to avoid OOM on large max_iterations
       acc <- new.env(parent = emptyenv())
-      acc$snapshots <- vector("list", private$max_iterations)
+      acc$capacity <- min(private$max_iterations, 1000L)
+      acc$snapshots <- vector("list", acc$capacity)
       acc$n <- 0L
 
       # Try to resume from checkpoint
@@ -259,6 +268,11 @@ AgentGraph <- R6::R6Class(
 
         snap <- new_state_snapshot(state, current_node, step)
         acc$n <- acc$n + 1L
+        # Grow dynamically if pre-allocated capacity is exceeded
+        if (acc$n > acc$capacity) {
+          acc$capacity <- acc$capacity * 2L
+          length(acc$snapshots) <- acc$capacity
+        }
         acc$snapshots[[acc$n]] <- snap
 
         if (is.function(on_step)) on_step(snap)
@@ -268,9 +282,8 @@ AgentGraph <- R6::R6Class(
       }
 
       if (step >= private$max_iterations && current_node != END) {
-        rlang::abort(
-          paste0("Graph exceeded max_iterations (", private$max_iterations, ")."),
-          call = NULL
+        cli::cli_warn(
+          "Graph exceeded max_iterations ({private$max_iterations}). Returning partial snapshots."
         )
       }
 
