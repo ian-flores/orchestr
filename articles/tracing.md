@@ -1,35 +1,34 @@
 # Traced Agent Workflows
 
-## Why Trace Agent Workflows?
+## Why trace agent workflows?
 
 Agent workflows are opaque by default. When you call `graph$invoke()`, a
-chain of LLM calls, tool executions, and routing decisions happens
-behind the scenes. If the agent produces a wrong answer, takes too long,
-or costs more than expected, you have no way to diagnose the problem
-without structured observability.
+chain of LLM calls, tool executions, and routing decisions fires in the
+graph runtime. If the agent produces a wrong answer, takes too long, or
+costs more than expected, you cannot diagnose the problem without
+structured observability.
 
-Tracing solves three concrete problems:
+Tracing solves three problems:
 
-- **Debugging**: When an agent gives a wrong answer, traces show you
-  exactly which node produced the bad output, what inputs it received,
-  and whether any tool calls failed. Instead of re-running the entire
-  workflow with print statements, you inspect the trace.
+- Debugging: When an agent gives a wrong answer, traces show you which
+  node produced the bad output, what inputs it received, and whether any
+  tool calls failed. Instead of re-running the entire workflow with
+  print statements, you inspect the trace.
 
-- **Performance**: Each span records its duration. In a pipeline with
-  three agents, the trace immediately shows whether the bottleneck is
-  the profiler (waiting on the LLM) or the reporter (generating a long
-  response). You optimize the right thing.
+- Performance: Each span records its duration. In a pipeline with three
+  agents, the trace shows whether the bottleneck is the profiler
+  (waiting on the LLM) or the reporter (generating a long response). You
+  optimize the right thing.
 
-- **Cost control**: LLM calls cost money, and multi-agent workflows
-  multiply the spend. Traced workflows record token counts and estimated
-  costs per span. You can spot a supervisor that is routing
-  inefficiently (too many iterations) or an agent that is sending
-  unnecessarily long prompts.
+- Cost control: LLM calls cost money, and multi-agent workflows multiply
+  the spend. Traced workflows record token counts and estimated costs
+  per span. You can spot a supervisor that routes inefficiently (too
+  many iterations) or an agent that sends unnecessarily long prompts.
 
 orchestr integrates with
-[securetrace](https://github.com/ian-flores/securetrace) to give you
-full observability into agent graph execution. Pass a `Trace` object to
-`$invoke()` or `$stream()` and every node gets its own span – timing,
+[securetrace](https://github.com/ian-flores/securetrace) for full
+observability into agent graph execution. Pass a `Trace` object to
+`$invoke()` or `$stream()` and every node gets its own span. Timing,
 errors, and metadata are captured automatically.
 
 The trace structure follows a simple hierarchy:
@@ -57,12 +56,12 @@ For securetrace fundamentals, see
 install.packages(c("orchestr", "securetrace"))
 ```
 
-## Basic Tracing
+## Basic tracing
 
 The `trace=` parameter on `AgentGraph$invoke()` accepts a
 [`securetrace::Trace`](https://ian-flores.github.io/securetrace/reference/Trace.html)
-object. When provided, orchestr wraps each node execution in a span
-named `"node:<name>"`:
+object. When present, orchestr wraps each node execution in a span named
+`"node:<name>"`:
 
 ``` r
 library(orchestr)
@@ -97,12 +96,10 @@ tr$summary()
 If securetrace is not installed, passing `trace=` issues a warning and
 execution continues without tracing.
 
-## Pipeline Tracing
+## Pipeline tracing
 
-In a pipeline, each agent becomes its own span. This makes it
-straightforward to identify where time and tokens are spent across the
-chain. If one agent is disproportionately slow or expensive, the trace
-tells you immediately.
+In a pipeline, each agent gets its own span, showing where time and
+tokens are spent across the chain.
 
 ``` r
 profiler <- agent("profiler", chat = chat_anthropic(
@@ -139,14 +136,13 @@ tr$summary()
 #>   node:reporter  -- 1.5s (completed)
 ```
 
-## Supervisor Tracing
+## Supervisor tracing
 
-Supervisor graphs produce a richer trace because the supervisor may
-route to multiple workers across several iterations. Each supervisor
-decision and worker execution gets its own span. This visibility is
-especially valuable for supervisors because the routing behavior is
-non-deterministic – you need the trace to understand what actually
-happened.
+Supervisor graphs produce more detailed traces because the supervisor
+may route to multiple workers across several iterations. Each supervisor
+decision and worker execution gets its own span. Since routing is
+non-deterministic, the trace is the only reliable record of what
+actually happened.
 
 ``` r
 supervisor <- agent("supervisor", chat = chat_anthropic(
@@ -188,11 +184,11 @@ tr$summary()
 #>   node:writing    -- 3.7s (completed)
 ```
 
-## Streaming with Traces
+## Streaming with traces
 
 `$stream()` also accepts `trace=`. You get both state snapshots and full
-tracing, which is useful for interactive applications that need progress
-updates while also recording full observability data for later analysis.
+tracing: progress updates for interactive applications, and
+observability data for later analysis.
 
 ``` r
 tr <- Trace$new("streamed-pipeline")
@@ -217,15 +213,14 @@ for (snap in snapshots) {
 tr$summary()
 ```
 
-## Cost Accounting
+## Cost accounting
 
-When agent nodes make LLM calls, securetrace can track token usage and
-compute cost. Combine the `trace=` parameter with
+When agent nodes make LLM calls, securetrace tracks token usage and
+computes cost. Combine the `trace=` parameter with
 [`trace_total_cost()`](https://ian-flores.github.io/securetrace/reference/trace_total_cost.html)
-to monitor spend across an entire graph run. This is critical for
-production deployments where multi-agent workflows can quickly
-accumulate costs – a supervisor with 10 iterations and 3 workers could
-make 20+ LLM calls in a single invocation.
+to monitor spend across an entire graph run. A supervisor with 10
+iterations and 3 workers could make 20+ LLM calls in a single
+invocation, so per-span cost visibility matters.
 
 ``` r
 tr <- Trace$new("cost-tracking")
@@ -243,17 +238,17 @@ securetrace::trace_total_cost(tr)
 #> [1] 0.0234
 ```
 
-For this to work, the LLM spans must have model and token information
-set. If you use orchestr’s built-in Agent class with ellmer, this is
-handled automatically when securetrace integration is active.
+For this to work, the LLM spans must carry model and token information.
+orchestr’s built-in Agent class with ellmer populates these fields
+automatically when securetrace integration is active.
 
-## Exporting Traces
+## Exporting traces
 
-### JSONL Export
+### JSONL export
 
 Write traced agent runs to a JSONL file for post-hoc analysis. Each line
-is a self-contained JSON object representing one span, making it easy to
-process with standard tools (jq, pandas, data.table).
+is a self-contained JSON object representing one span, so it is
+straightforward to process with standard tools (jq, pandas, data.table).
 
 ``` r
 exp <- jsonl_exporter("agent-traces.jsonl")
@@ -272,7 +267,7 @@ tr$end()
 export_trace(exp, tr)
 ```
 
-### Console Export
+### Console export
 
 For interactive debugging, use
 [`console_exporter()`](https://ian-flores.github.io/securetrace/reference/console_exporter.html)
@@ -297,23 +292,21 @@ export_trace(exp, tr)
 #>   [SPAN] node:supervisor -- 1.1s completed
 ```
 
-## Cloud-Native Integration
+## Cloud-native integration
 
-For production deployments, securetrace supports OTLP export (Jaeger,
+For production deployments, securetrace exports via OTLP (Jaeger,
 Grafana Tempo), Prometheus metrics, and W3C Trace Context propagation.
-Rather than duplicating the full setup here, see
+See
 [`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html)
-for comprehensive configuration guides covering:
+for configuration guides covering:
 
-- **OTLP export** – sending traces to Jaeger or Grafana Tempo collectors
-- **Prometheus metrics** – exposing span counts, token usage, and cost
-  as time-series metrics for dashboards and alerting
-- **W3C Trace Context** – propagating trace IDs across service
-  boundaries
-- **Multi-exporter setup** – combining OTLP, Prometheus, and JSONL for
-  complete observability
+- OTLP export: sending traces to Jaeger or Grafana Tempo collectors
+- Prometheus metrics: exposing span counts, token usage, and cost as
+  time-series metrics for dashboards and alerting
+- W3C Trace Context: propagating trace IDs across service boundaries
+- Multi-exporter setup: combining OTLP, Prometheus, and JSONL
 
-Here is a minimal OTLP example to get started:
+Here is a minimal OTLP example:
 
 ``` r
 exp <- otlp_exporter(
@@ -334,13 +327,12 @@ export_trace(exp, tr)
 #> Trace exported to http://localhost:4318/v1/traces
 ```
 
-## Error Tracing
+## Error tracing
 
 When a node fails, orchestr records the error on the span before
-re-raising it. This means failed runs still produce useful traces – you
-can see exactly which node failed, how long it ran before failing, and
-what error message was produced. This is especially valuable for
-intermittent failures in production.
+re-raising it. Failed runs still produce useful traces: which node
+failed, how long it ran before failing, and what error message was
+produced.
 
 ``` r
 tr <- Trace$new("error-demo")
@@ -366,23 +358,23 @@ tr$summary()
 #>   node:supervisor -- 0.5s (error)
 ```
 
-## Next Steps
+## Next steps
 
-- **[Getting
-  Started](https://ian-flores.github.io/orchestr/articles/quickstart.md)**
-  – single-agent basics and provider setup
-- **[Multi-Agent
-  Workflows](https://ian-flores.github.io/orchestr/articles/multi-agent.md)**
-  – pipelines and supervisors
-- **[Secure
-  Execution](https://ian-flores.github.io/orchestr/articles/securer.md)**
-  – sandboxed code execution with securer
-- **[Governed
-  Agent](https://ian-flores.github.io/orchestr/articles/governed-agent.md)**
-  – the full 7-package stack
-- **securetrace**:
-  [`vignette("observability", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/observability.html)
-  – trace fundamentals
-- **securetrace**:
-  [`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html)
-  – OTLP, Prometheus, W3C
+- [Getting
+  started](https://ian-flores.github.io/orchestr/articles/quickstart.md):
+  single-agent basics and provider setup
+- [Multi-agent
+  workflows](https://ian-flores.github.io/orchestr/articles/multi-agent.md):
+  pipelines and supervisors
+- [Secure
+  execution](https://ian-flores.github.io/orchestr/articles/securer.md):
+  sandboxed code execution with securer
+- [Governed
+  agent](https://ian-flores.github.io/orchestr/articles/governed-agent.md):
+  the full 7-package stack
+- securetrace:
+  [`vignette("observability", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/observability.html),
+  trace fundamentals
+- securetrace:
+  [`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html),
+  OTLP, Prometheus, W3C

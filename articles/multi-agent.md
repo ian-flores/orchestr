@@ -1,24 +1,22 @@
 # Multi-Agent Workflows
 
-## Choosing a Multi-Agent Pattern
+## Choosing a multi-agent pattern
 
-When a single agent is not enough – because the task has distinct
-stages, or because different subtasks require different expertise –
-orchestr provides two multi-agent patterns: **pipelines** and
-**supervisors**. Choosing between them is the first design decision for
-any multi-agent workflow.
+When a single agent cannot handle a task because it has distinct stages
+or requires different expertise for different subtasks, orchestr offers
+two multi-agent patterns: pipelines and supervisors.
 
-A **pipeline** is the right choice when you know the sequence of steps
-at design time. Data flows linearly from one specialist to the next,
-like an assembly line. Each agent makes exactly one LLM call, so costs
-are predictable and execution order is deterministic.
+A pipeline is the right choice when you know the sequence of steps at
+design time. Data flows linearly from one specialist to the next, like
+an assembly line. Each agent makes exactly one LLM call, so costs are
+predictable and execution order is deterministic.
 
-A **supervisor** is the right choice when the routing depends on the
-content of the request. A coordinator agent reads the user’s message,
-decides which specialist should handle it, and dispatches accordingly.
-The supervisor can route to multiple workers across several iterations,
-making it suitable for open-ended tasks where the needed expertise is
-not known in advance.
+A supervisor is the right choice when the routing depends on the content
+of the request. A coordinator agent reads the user’s message, decides
+which specialist should handle it, and dispatches accordingly. The
+supervisor can route to multiple workers across several iterations,
+which makes it suitable for open-ended tasks where the needed expertise
+is not known in advance.
 
 Here is a comparison of the two patterns:
 
@@ -35,13 +33,12 @@ human-in-the-loop approvals), drop down to
 [`graph_builder()`](https://ian-flores.github.io/orchestr/reference/graph_builder.md)
 for full control over the topology.
 
-## Pipeline Pattern
+## Pipeline pattern
 
 A pipeline passes state through a sequence of agents, each transforming
-it before handing off to the next. The key idea is **separation of
-concerns**: each agent has a focused role, and the pipeline composes
-them into a coherent workflow. This makes individual agents easier to
-test, swap, and reason about compared to a single monolithic prompt.
+it before handing off to the next. Each agent has a focused role, which
+makes individual agents easier to test and swap than a single monolithic
+prompt.
 
 The pipeline flow looks like this:
 
@@ -87,14 +84,13 @@ result <- pipeline$invoke(list(
 cat(result$messages[[length(result$messages)]])
 ```
 
-### Data Analysis Pipeline
+### Data analysis pipeline
 
 A more realistic pipeline that profiles data, analyzes patterns, and
-produces a report. This three-stage design is common in data science
-workflows: the profiler gathers facts, the analyst finds meaning, and
-the reporter communicates results. Each agent sees the accumulated
-conversation history, so the analyst can reference the profiler’s output
-and the reporter can reference both.
+produces a report. The profiler gathers facts, the analyst interprets
+them, and the reporter writes up the results. Each agent sees the
+accumulated conversation history, so the analyst can reference the
+profiler’s output and the reporter can reference both.
 
 ``` r
 profiler <- agent("profiler", chat = chat_anthropic(
@@ -115,16 +111,16 @@ result <- graph$invoke(list(messages = list(
 )))
 ```
 
-### Using `graph_builder()` Directly
+### Using `graph_builder()` directly
 
-For more control – conditional edges, cycles, or custom node functions –
-use the builder API. This is the same API that
+For conditional edges, cycles, or custom node functions, use the builder
+API.
 [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md)
 and
 [`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/supervisor_graph.md)
-use internally. The builder gives you full access to the graph topology:
-add nodes, wire edges (including conditional edges), and set the entry
-point explicitly.
+use this same API internally. The builder exposes the full graph
+topology: add nodes, wire edges (including conditional edges), and set
+the entry point explicitly.
 
 ``` r
 drafter <- agent("drafter", chat = chat_anthropic(
@@ -150,20 +146,17 @@ result <- pipeline$invoke(list(
 cat(result$messages[[length(result$messages)]])
 ```
 
-## Supervisor Pattern
+## Supervisor pattern
 
-While pipelines follow a fixed path, supervisors make **dynamic routing
-decisions** at runtime. A supervisor agent receives the user’s request,
-evaluates which specialist is best suited to handle it, and dispatches
-the work using a `route` tool that orchestr injects automatically. After
-the worker responds, control returns to the supervisor, which can route
-again (to a different worker, or the same one) or finish.
+Supervisors make routing decisions at runtime. A supervisor agent reads
+the user’s request, picks the right specialist, and dispatches the work
+using a `route` tool that orchestr injects automatically. After the
+worker responds, control returns to the supervisor, which can route
+again or finish.
 
-This pattern is powerful for open-ended tasks where the required
-expertise depends on the input. A question about calculus goes to the
-math worker; a request to polish prose goes to the writing worker. The
-supervisor makes this decision using the LLM’s own judgment, guided by
-its system prompt and the worker descriptions.
+A question about calculus goes to the math worker; a request to polish
+prose goes to the writing worker. The supervisor decides using the LLM’s
+own judgment, guided by its system prompt and the worker descriptions.
 
 The routing flow looks like this:
 
@@ -210,33 +203,32 @@ result <- graph$invoke(list(
 
 The supervisor automatically receives a `route` tool that it calls to
 dispatch to workers or finish. Start with low `max_iterations` values to
-control costs – each iteration involves an LLM call for the supervisor
+control costs; each iteration involves an LLM call for the supervisor
 plus the selected worker.
 
-## State Management
+## State management
 
 All graph types in orchestr share a common state model. State is a named
-list that flows through the graph, getting modified by each node. By
+list that flows through the graph and gets modified by each node. By
 default, orchestr uses a simple schema where `messages` is a list that
 gets appended to as agents respond.
 
-Understanding state flow matters because it determines what each agent
-sees. In a pipeline, the second agent sees the first agent’s output in
-the message history. In a supervisor, each worker sees the full
-conversation including the supervisor’s routing decisions. This
-shared-state design means agents can build on each other’s work without
-explicit message passing.
+State flow determines what each agent sees. In a pipeline, the second
+agent sees the first agent’s output in the message history. In a
+supervisor, each worker sees the full conversation including the
+supervisor’s routing decisions. Agents build on each other’s work
+without explicit message passing.
 
 For advanced use cases, `StateSchema$new()` lets you define typed fields
 with custom reducers. For example, you might accumulate a `findings`
 list across pipeline stages while keeping a `summary` field that gets
 overwritten by the final agent.
 
-## Streaming State Snapshots
+## Streaming state snapshots
 
 Use `$stream()` to collect state snapshots at each step. This is useful
 for building progress indicators in interactive applications, or for
-debugging graph execution by inspecting intermediate states.
+debugging graph execution by looking at intermediate states.
 
 ``` r
 pipeline <- pipeline_graph(
@@ -257,13 +249,11 @@ for (snap in snapshots) {
 }
 ```
 
-## Visualizing the Graph
+## Visualizing the graph
 
-Understanding the topology of a graph is easier with a visual
-representation.
 [`as_mermaid()`](https://ian-flores.github.io/orchestr/reference/as_mermaid.md)
-generates a Mermaid diagram string that you can render in any
-Mermaid-compatible viewer (GitHub markdown, pkgdown sites, Quarto
+generates a Mermaid diagram string for a graph, which you can render in
+any Mermaid-compatible viewer (GitHub markdown, pkgdown sites, Quarto
 documents, or the Mermaid live editor).
 
 ``` r
@@ -294,17 +284,17 @@ cat(as_mermaid(graph))
 #     writing --> supervisor
 ```
 
-## Next Steps
+## Next steps
 
-- **[Getting
-  Started](https://ian-flores.github.io/orchestr/articles/quickstart.md)**
-  – single-agent basics and provider setup
-- **[Secure
-  Execution](https://ian-flores.github.io/orchestr/articles/securer.md)**
-  – sandboxed code execution with securer
-- **[Traced
-  Workflows](https://ian-flores.github.io/orchestr/articles/tracing.md)**
-  – observability with securetrace
-- **[Governed
-  Agent](https://ian-flores.github.io/orchestr/articles/governed-agent.md)**
-  – the full 7-package stack
+- [Getting
+  started](https://ian-flores.github.io/orchestr/articles/quickstart.md):
+  single-agent basics and provider setup
+- [Secure
+  execution](https://ian-flores.github.io/orchestr/articles/securer.md):
+  sandboxed code execution with securer
+- [Traced
+  workflows](https://ian-flores.github.io/orchestr/articles/tracing.md):
+  observability with securetrace
+- [Governed
+  agent](https://ian-flores.github.io/orchestr/articles/governed-agent.md):
+  the full 7-package stack

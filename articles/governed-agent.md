@@ -1,12 +1,11 @@
 # Building a Governed AI Agent in R
 
-This vignette walks through building a complete **governed AI agent** in
-R – an agent that reasons, acts, guards its inputs and outputs, executes
-code in a sandbox, retrieves context from a knowledge base, and produces
-structured observability traces. It brings together all 7 packages in
-the secure-r-dev ecosystem.
+A governed AI agent reasons, acts, guards its inputs and outputs,
+executes code in a sandbox, retrieves context from a knowledge base, and
+produces structured observability traces. This example brings together
+all 7 packages in the secure-r-dev ecosystem.
 
-## Ecosystem Architecture
+## Ecosystem architecture
 
 The seven packages form a layered stack. At the bottom, `securer`
 provides sandboxed execution. In the middle, `securetools`,
@@ -41,19 +40,14 @@ evaluation.
 | **securebench**   | Guardrail benchmarking                 |
 
 Each section below introduces one layer of governance. The final section
-assembles everything into a single coherent example.
+assembles everything into one working example.
 
-## Step 1: Define the Agent
+## Step 1: Define the agent
 
-Every governed agent starts with the same foundation: an ellmer `Chat`
-object wrapped in an orchestr `Agent`. The agent constructor binds
-together the LLM connection, system prompt, and tool registry into a
-single entity that the graph runtime can execute.
-
-An agent wraps an ellmer `Chat` object with a name, system prompt, and
-optional tools. The
+The
 [`agent()`](https://ian-flores.github.io/orchestr/reference/Agent.md)
-constructor is the entry point for all orchestr workflows.
+constructor binds together an ellmer `Chat` object, a system prompt, and
+a tool registry into a single entity that the graph runtime can execute.
 
 ``` r
 library(orchestr)
@@ -88,15 +82,10 @@ result <- graph$invoke(list(
 For more graph patterns (pipelines, supervisors), see
 [`vignette("multi-agent")`](https://ian-flores.github.io/orchestr/articles/multi-agent.md).
 
-## Step 2: Add Secure Tools
+## Step 2: Add secure tools
 
-With the agent defined, the next step is giving it the ability to act on
-the world. securetools provides pre-built tool factories that are
-hardened by default – path validation, rate limiting, and AST-based
-expression whitelisting are built in, not bolted on.
-
-securetools provides pre-built tool factories with built-in security
-constraints. Each factory returns a
+securetools ships pre-built tool factories that are hardened by default.
+Each factory returns a
 [`securer::securer_tool()`](https://ian-flores.github.io/securer/reference/securer_tool.html)
 with path validation, rate limiting, and AST-based expression
 whitelisting.
@@ -131,17 +120,12 @@ against the `allowed_dirs` allowlist. See
 [`vignette("agent-integration", package = "securetools")`](https://ian-flores.github.io/securetools/articles/agent-integration.html)
 for the full tool catalog.
 
-## Step 3: Guard the Agent
+## Step 3: Guard the agent
 
-Tools let the agent act; guardrails constrain what actions are
-acceptable. secureguard provides three layers of defense – input, code,
-and output – that work together to create a security perimeter around
-the agent. Input guards catch malicious prompts before the LLM sees
-them. Code guards validate generated code before execution. Output
-guards sanitize responses before they reach the user.
-
-secureguard provides three layers of guardrails – input, code, and
-output – that compose into a
+secureguard applies three layers of checking: input, code, and output.
+Input guards catch malicious prompts before the LLM sees them. Code
+guards validate generated code before execution. Output guards sanitize
+responses before they reach the user. All three compose into a
 [`secure_pipeline()`](https://ian-flores.github.io/secureguard/reference/secure_pipeline.html).
 
 ``` r
@@ -214,17 +198,14 @@ output_result$result
 #> [1] "The contact is [REDACTED_EMAIL], SSN [REDACTED_SSN]"
 ```
 
-## Step 4: Sandbox Execution
+## Step 4: Sandbox execution
 
-Guardrails provide defense-in-depth at the application level, but they
-are ultimately R code checking R code. A sufficiently creative adversary
-might find a bypass. Sandboxed execution adds an orthogonal layer of
-protection at the OS level – even if a code guardrail misses a dangerous
-call, the sandbox prevents it from succeeding.
-
-securer runs agent-generated code in an isolated child process with
-OS-level sandboxing (Seatbelt on macOS, bubblewrap on Linux). Combine it
-with secureguard’s code guardrails via
+Guardrails are R code checking R code. A sufficiently creative adversary
+might bypass them. Sandboxed execution adds a separate layer at the OS
+level: even if a code guardrail misses a dangerous call, the sandbox
+blocks it. securer runs agent-generated code in an isolated child
+process (Seatbelt on macOS, bubblewrap on Linux). Combine it with
+secureguard’s code guardrails via
 [`as_pre_execute_hook()`](https://ian-flores.github.io/secureguard/reference/as_pre_execute_hook.html):
 
 ``` r
@@ -283,17 +264,14 @@ See
 [`vignette("securer", package = "orchestr")`](https://ian-flores.github.io/orchestr/articles/securer.md)
 for more patterns.
 
-## Step 5: Add RAG Memory
+## Step 5: Add RAG memory
 
 An agent with tools and guardrails can act safely, but it only knows
-what the LLM was trained on. For domain-specific questions – “What was
-Q4 revenue?” – the agent needs access to your data. securecontext
-provides local TF-IDF embeddings, a vector store, and a knowledge store
-that can be wired into orchestr as agent memory. All retrieval runs
-locally; no data leaves the R process.
-
-securecontext provides local TF-IDF embeddings, a vector store, and a
-knowledge store that can be wired into orchestr as agent memory.
+what the LLM was trained on. For domain-specific questions (“What was Q4
+revenue?”), the agent needs access to your data. securecontext provides
+local TF-IDF embeddings, a vector store, and a knowledge store that plug
+into orchestr as agent memory. All retrieval runs locally; no data
+leaves the R process.
 
 ``` r
 library(securecontext)
@@ -357,17 +335,13 @@ mem$get("q4_revenue")
 For the full RAG pipeline, see
 [`vignette("orchestr-integration", package = "securecontext")`](https://ian-flores.github.io/securecontext/articles/orchestr-integration.html).
 
-## Step 6: Instrument with Traces
+## Step 6: Instrument with traces
 
-With all the functional layers in place – tools, guardrails, sandbox,
-memory – the final governance requirement is observability. You need to
-know what your agent did, how long it took, how much it cost, and
-whether any errors occurred. securetrace provides structured tracing
-that integrates directly with orchestr’s graph runtime.
-
-securetrace provides structured tracing with spans, token accounting,
-and multiple export backends. Pass a `Trace` to `graph$invoke()` to
-automatically instrument every node:
+The last governance requirement is observability: what did the agent do,
+how long did it take, what did it cost, and did any errors occur?
+securetrace captures structured traces with spans, token accounting, and
+multiple export backends. Pass a `Trace` to `graph$invoke()` to
+instrument every node:
 
 ``` r
 library(securetrace)
@@ -392,7 +366,7 @@ tr$summary()
 #>   Cost: $0.001230
 ```
 
-### Context API for Manual Spans
+### Context API for manual spans
 
 Use
 [`with_trace()`](https://ian-flores.github.io/securetrace/reference/with_trace.html)
@@ -420,11 +394,10 @@ result <- with_trace("full-pipeline", {
 })
 ```
 
-### Exporting Traces
+### Exporting traces
 
 Export to JSONL for local analysis, OTLP for Jaeger/Tempo, or Prometheus
-for time-series metrics. For detailed configuration of cloud-native
-exporters, see
+for time-series metrics. For cloud-native exporter configuration, see
 [`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html).
 
 ``` r
@@ -453,17 +426,12 @@ For the full observability stack, see
 and
 [`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html).
 
-## Step 7: Benchmark Guardrails
+## Step 7: Benchmark guardrails
 
-Before deploying guardrails to production, you need to know how well
-they perform. A guardrail that blocks 90% of injections but also blocks
-20% of legitimate queries is worse than useless. securebench provides
-precision, recall, and F1 metrics so you can measure this tradeoff
-quantitatively.
-
-securebench measures guardrail accuracy with precision, recall, and F1
-metrics. Use it to validate your guardrail configuration before
-deploying to production.
+A guardrail that blocks 90% of injections but also blocks 20% of
+legitimate queries is worse than useless. securebench measures guardrail
+accuracy with precision, recall, and F1 metrics so you can quantify this
+tradeoff before deploying to production.
 
 ``` r
 library(securebench)
@@ -496,7 +464,7 @@ metrics$f1
 #> [1] 1
 ```
 
-For more detailed evaluation, use
+For finer-grained evaluation, use
 [`guardrail_eval()`](https://ian-flores.github.io/securebench/reference/guardrail_eval.html)
 with labeled datasets:
 
@@ -560,11 +528,10 @@ comparison$regressed
 #> [1] 0
 ```
 
-## Step 8: Full Assembled Example
+## Step 8: Full assembled example
 
-Below is the complete governed agent combining all seven layers. This is
-the blueprint for production AI agent deployments in R. Each numbered
-section corresponds to a governance layer introduced above.
+Below is the complete governed agent combining all seven layers. Each
+numbered section corresponds to a governance layer introduced above.
 
 ``` r
 library(orchestr)
@@ -671,38 +638,37 @@ cat(format_prometheus(reg))
 
 This agent has six layers of governance:
 
-1.  **Input guardrails** – prompt injection and PII blocked before the
-    LLM sees them
-2.  **Secure tools** – file access restricted to allowed directories,
+1.  Input guardrails: prompt injection and PII blocked before the LLM
+    sees them
+2.  Secure tools: file access restricted to allowed directories,
     calculator AST-validated
-3.  **Sandboxed execution** – OS-level isolation via Seatbelt/bubblewrap
-4.  **RAG context** – local TF-IDF retrieval, no data leaves the host
-5.  **Output guardrails** – PII redacted, secrets blocked before
-    reaching the user
-6.  **Full observability** – traces exported to JSONL and Prometheus for
-    audit
+3.  Sandboxed execution: OS-level isolation via Seatbelt/bubblewrap
+4.  RAG context: local TF-IDF retrieval, no data leaves the host
+5.  Output guardrails: PII redacted, secrets blocked before reaching the
+    user
+6.  Observability: traces exported to JSONL and Prometheus for audit
 
 All analysis runs locally. No data leaves the R process except what you
 explicitly export.
 
-## Next Steps
+## Next steps
 
-- **securetools**:
-  [`vignette("agent-integration", package = "securetools")`](https://ian-flores.github.io/securetools/articles/agent-integration.html)
-  – full tool catalog (SQL, plotting, fetch)
-- **secureguard**: `vignette("quickstart", package = "secureguard")` –
-  custom guardrails and composition
-- **securer**:
-  [`vignette("security-model", package = "securer")`](https://ian-flores.github.io/securer/articles/security-model.html)
-  – threat model and sandbox architecture
-- **securecontext**:
-  [`vignette("orchestr-integration", package = "securecontext")`](https://ian-flores.github.io/securecontext/articles/orchestr-integration.html)
-  – RAG pipeline with orchestr agents
-- **securetrace**:
-  [`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html)
-  – OTLP, Prometheus, and W3C propagation
-- **securebench**: `vignette("quickstart", package = "securebench")` –
+- securetools:
+  [`vignette("agent-integration", package = "securetools")`](https://ian-flores.github.io/securetools/articles/agent-integration.html),
+  full tool catalog (SQL, plotting, fetch)
+- secureguard: `vignette("quickstart", package = "secureguard")`, custom
+  guardrails and composition
+- securer:
+  [`vignette("security-model", package = "securer")`](https://ian-flores.github.io/securer/articles/security-model.html),
+  threat model and sandbox architecture
+- securecontext:
+  [`vignette("orchestr-integration", package = "securecontext")`](https://ian-flores.github.io/securecontext/articles/orchestr-integration.html),
+  RAG pipeline with orchestr agents
+- securetrace:
+  [`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html),
+  OTLP, Prometheus, and W3C propagation
+- securebench: `vignette("quickstart", package = "securebench")`,
   evaluation datasets and vitals interop
-- **orchestr**:
-  [`vignette("tracing")`](https://ian-flores.github.io/orchestr/articles/tracing.md)
-  – traced agent workflows
+- orchestr:
+  [`vignette("tracing")`](https://ian-flores.github.io/orchestr/articles/tracing.md),
+  traced agent workflows
