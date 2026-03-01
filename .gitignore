@@ -9,3 +9,5 @@ src/*.dll
 inst/doc
 Meta
 doc
+docs/
+.claude/
