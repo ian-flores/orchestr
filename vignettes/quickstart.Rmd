@@ -15,28 +15,26 @@ knitr::opts_chunk$set(
 )
 ```
 
-## What Problem Does orchestr Solve?
+## What problem does orchestr solve?
 
-Large language models are remarkably capable on their own, but building a
-production-grade AI agent requires more than a single prompt-response exchange.
-You need structured reasoning loops so the model can think before it acts.
-You need pipelines that chain specialists together. You need supervisors that
-route work to the right expert. And you need all of this to be observable,
-checkpointable, and safe.
+Large language models work well on their own, but building a production agent
+requires more than a single prompt-response exchange. A production agent needs
+structured reasoning loops, pipelines that chain specialists together,
+supervisors that route work to the right expert, and controls that keep the
+whole system observable, checkpointable, and safe.
 
-orchestr provides a **graph-based orchestration layer** for R that sits on top
-of [ellmer](https://github.com/tidyverse/ellmer) (the LLM chat interface) and
+orchestr is a graph-based orchestration layer for R that sits on top of
+[ellmer](https://github.com/tidyverse/ellmer) (the LLM chat interface) and
 optionally [securer](https://github.com/ian-flores/securer) (sandboxed code
 execution). Instead of writing ad-hoc loops and if-else routing, you define
 agents, wire them into a graph, and let orchestr handle execution flow,
 state management, and iteration control.
 
-The core abstraction is simple: **agents are nodes, edges define flow, and
-the graph runtime handles the rest**. Whether you need a single ReAct agent,
-a three-stage pipeline, or a supervisor that dynamically routes to a pool
-of workers, the same graph primitives apply.
+Agents are nodes, edges define flow, and the graph runtime handles the rest.
+Whether you need a single ReAct agent, a three-stage pipeline, or a supervisor
+that dynamically routes to a pool of workers, the same graph primitives apply.
 
-### The ReAct Pattern
+### The ReAct pattern
 
 orchestr's default execution model follows the ReAct (Reasoning + Acting)
 pattern. The agent repeatedly thinks about what to do, takes an action
@@ -54,24 +52,24 @@ or stop:
 This loop is implemented by `react_graph()` and runs within a safety cap
 (`max_iterations`) to prevent runaway LLM calls.
 
-### When to Use orchestr vs. Plain ellmer
+### When to use orchestr vs. plain ellmer
 
-If your use case is a single prompt-response exchange -- ask a question, get an
-answer -- plain ellmer is the right choice. ellmer handles tool call loops
-internally, supports streaming, and has minimal overhead.
+If your use case is a single prompt-response exchange, plain ellmer is the
+right choice. ellmer handles tool call loops internally, supports streaming,
+and has minimal overhead.
 
 Reach for orchestr when you need one or more of:
 
-- **Multi-agent workflows** -- pipelines, supervisors, or custom graph topologies
-- **State management** -- typed state schemas with reducers that accumulate
+- Multi-agent workflows: pipelines, supervisors, or custom graph topologies
+- State management: typed state schemas with reducers that accumulate
   results across nodes
-- **Checkpointing** -- save and resume graph execution mid-run
-- **Observability** -- automatic span creation when combined with securetrace
-- **Iteration control** -- max_iterations caps, conditional routing, interrupt
+- Checkpointing: save and resume graph execution mid-run
+- Observability: automatic span creation when combined with securetrace
+- Iteration control: max_iterations caps, conditional routing, interrupt
   and approval flows
 
-In short: ellmer gives you a single agent with tools; orchestr gives you a
-framework for composing multiple agents into governed workflows.
+ellmer runs a single agent with tools; orchestr composes multiple agents
+into governed workflows.
 
 ## Installation
 
@@ -79,7 +77,7 @@ framework for composing multiple agents into governed workflows.
 install.packages("orchestr")
 ```
 
-## API Key Setup
+## API key setup
 
 orchestr uses [ellmer](https://github.com/tidyverse/ellmer) for LLM access.
 Set your provider's API key before running any examples:
@@ -94,13 +92,11 @@ Sys.setenv(OPENAI_API_KEY = "your-key-here")
 
 See ellmer's documentation for all supported providers.
 
-## Using Different Providers
+## Using different providers
 
-orchestr works with any ellmer chat backend. This is a deliberate design
-choice: the orchestration layer should not care which LLM you use. Pass
-the appropriate `chat_*()` constructor to `agent()` and everything --
-graphs, pipelines, supervisors, tracing -- works identically regardless
-of the backing model.
+orchestr works with any ellmer chat backend. Pass the appropriate `chat_*()`
+constructor to `agent()` and everything works the same regardless of the
+backing model.
 
 ```{r providers}
 library(orchestr)
@@ -127,12 +123,12 @@ agent("analyst", chat = chat_azure_openai(
 All graph types (`react_graph()`, `pipeline_graph()`, `supervisor_graph()`)
 work identically regardless of which provider backs the agent.
 
-## Your First Agent
+## Your first agent
 
 An `Agent` wraps an ellmer `Chat` object with a name and an optional system
-prompt. The `agent()` constructor is the recommended entry point because
-it validates inputs and provides sensible defaults. Under the hood, it creates
-an R6 `Agent` instance that manages conversation state and tool registration.
+prompt. The `agent()` constructor validates inputs, applies defaults, and
+returns an R6 `Agent` instance that manages conversation state and tool
+registration.
 
 ```{r single-agent}
 library(orchestr)
@@ -147,16 +143,13 @@ response <- analyst$invoke("Describe the key features of the iris dataset.")
 cat(response)
 ```
 
-## Adding Tools
+## Adding tools
 
-Agents become truly useful when they can take actions beyond generating text.
-Tools let an agent call R functions -- looking up data, running calculations,
-querying databases -- as part of its reasoning process. ellmer's `Chat` class
-handles tool call loops internally: when the model decides to use a tool,
-ellmer executes the function and feeds the result back automatically.
-
-This matters because it transforms the agent from a text generator into an
-actor that can observe real data and adapt its analysis accordingly.
+Tools let an agent call R functions as part of its reasoning -- looking up
+data, running calculations, querying databases. ellmer's `Chat` class handles
+tool call loops internally. When the model decides to use a tool, ellmer
+executes the function and feeds the result back, so the agent can observe
+real data and adjust its response.
 
 ```{r tools}
 summary_tool <- tool(
@@ -181,17 +174,13 @@ response <- analyst$invoke("Summarize the mtcars dataset.")
 cat(response)
 ```
 
-## Single-Agent Graph with `react_graph()`
+## Single-agent graph with `react_graph()`
 
-Why wrap a single agent in a graph at all? Because `react_graph()` adds
-three capabilities that a bare agent lacks: **state management** (the graph
-maintains a typed state object that persists across iterations),
-**checkpointing** (you can save and resume mid-run), and **tracing**
-(pass a securetrace `Trace` to automatically instrument every iteration).
-
-Even for simple use cases, the graph wrapper gives you a consistent interface
-(`$invoke()`, `$stream()`) that scales from one agent to many without changing
-your calling code.
+`react_graph()` wraps a single agent in a graph that adds three things a bare
+agent lacks: state management (a typed state object persists across
+iterations), checkpointing (save and resume mid-run), and tracing (pass a
+securetrace `Trace` to instrument every iteration). The graph interface
+(`$invoke()`, `$stream()`) stays the same whether you run one agent or many.
 
 ```{r react}
 analyst <- agent("analyst", chat = chat_anthropic(
@@ -214,13 +203,13 @@ result <- graph$invoke(
 )
 ```
 
-## Agent Pipeline with `pipeline_graph()`
+## Agent pipeline with `pipeline_graph()`
 
-When a task decomposes into distinct stages -- profile the data, then analyze
-patterns, then write a report -- a pipeline chains agents in sequence. Each
-agent processes the shared state and passes it forward. This is simpler and
-cheaper than a supervisor because each agent makes exactly one LLM call,
-and the execution order is fixed at graph construction time.
+When a task breaks into distinct stages (profile the data, analyze patterns,
+write a report), a pipeline chains agents in sequence. Each agent processes
+the shared state and passes it forward. Pipelines cost less than supervisors
+because each agent makes exactly one LLM call, and the execution order is
+fixed at graph construction time.
 
 ```{r pipeline}
 profiler <- agent("profiler", chat = chat_anthropic(
@@ -237,9 +226,9 @@ result <- pipeline$invoke(list(messages = list(
 )))
 ```
 
-## Next Steps
+## Next steps
 
-- **[Multi-Agent Workflows](multi-agent.html)** -- pipelines, supervisor routing, and visualization
-- **[Secure Execution](securer.html)** -- sandboxed code execution with securer
-- **[Traced Workflows](tracing.html)** -- observability with securetrace
-- **[Governed Agent](governed-agent.html)** -- the full 7-package stack
+- [Multi-agent workflows](multi-agent.html): pipelines, supervisor routing, and visualization
+- [Secure execution](securer.html): sandboxed code execution with securer
+- [Traced workflows](tracing.html): observability with securetrace
+- [Governed agent](governed-agent.html): the full 7-package stack
