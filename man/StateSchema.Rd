@@ -28,6 +28,7 @@ Use the \code{\link[=state_schema]{state_schema()}} constructor function.
 \item \href{#method-StateSchema-validate}{\code{StateSchema$validate()}}
 \item \href{#method-StateSchema-merge}{\code{StateSchema$merge()}}
 \item \href{#method-StateSchema-field_names}{\code{StateSchema$field_names()}}
+\item \href{#method-StateSchema-print}{\code{StateSchema$print()}}
 \item \href{#method-StateSchema-clone}{\code{StateSchema$clone()}}
 }
 }
@@ -108,6 +109,23 @@ Get field names defined in this schema
 
 \subsection{Returns}{
 Character vector of field names
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-StateSchema-print"></a>}}
+\if{latex}{\out{\hypertarget{method-StateSchema-print}{}}}
+\subsection{Method \code{print()}}{
+Print method
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{StateSchema$print(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Ignored.}
+}
+\if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}

@@ -29,19 +29,14 @@ Agent <- R6::R6Class(
                           memory = NULL) {
       if (!is.character(name) || length(name) != 1L || is.na(name) ||
             !nzchar(name)) {
-        abort("`name` must be a non-empty string.", call = NULL)
+        cli::cli_abort("{.arg name} must be a non-empty string.")
       }
 
       required_methods <- c("chat", "get_turns", "set_turns", "clone")
       missing <- setdiff(required_methods, names(chat))
       if (length(missing) > 0L) {
-        abort(
-          paste0(
-            "`chat` must be a chat object with methods: ",
-            paste(required_methods, collapse = ", "), ". ",
-            "Missing: ", paste(missing, collapse = ", "), "."
-          ),
-          call = NULL
+        cli::cli_abort(
+          "{.arg chat} must be a chat object with methods: {.and {.fn {required_methods}}}. Missing: {.and {.fn {missing}}}."
         )
       }
 

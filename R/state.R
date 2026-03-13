@@ -22,10 +22,10 @@ StateSchema <- R6::R6Class(
     initialize = function(..., .max_append = Inf) {
       specs <- list(...)
       if (length(specs) == 0L) {
-        rlang::abort("StateSchema requires at least one field specification.", call = NULL)
+        cli::cli_abort("{.cls StateSchema} requires at least one field specification.")
       }
       if (!rlang::is_named(specs)) {
-        rlang::abort("All StateSchema fields must be named.", call = NULL)
+        cli::cli_abort("All {.cls StateSchema} fields must be named.")
       }
       parsed <- lapply(specs, private$parse_spec)
       private$fields <- parsed
@@ -42,19 +42,16 @@ StateSchema <- R6::R6Class(
       }
       unknown <- setdiff(names(updates), names(private$fields))
       if (length(unknown) > 0L) {
-        rlang::abort(paste0(
-          "Unknown state fields: ", paste(unknown, collapse = ", ")
-        ), call = NULL)
+        cli::cli_abort("Unknown state field{?s}: {.field {unknown}}.")
       }
       for (nm in names(updates)) {
         spec <- private$fields[[nm]]
         if (spec$type != "any") {
           val <- updates[[nm]]
           if (!private$check_type(val, spec$type)) {
-            rlang::abort(paste0(
-              "Field '", nm, "' expects type '", spec$type,
-              "', got '", class(val)[[1L]], "'."
-            ), call = NULL)
+            cli::cli_abort(
+              "Field {.field {nm}} expects type {.cls {spec$type}}, got {.cls {class(val)[[1L]]}}."
+            )
           }
         }
       }
@@ -91,6 +88,22 @@ StateSchema <- R6::R6Class(
     #' @return Character vector of field names
     field_names = function() {
       names(private$fields)
+    },
+
+    #' @description Print method
+    #' @param ... Ignored.
+    print = function(...) {
+      flds <- private$fields
+      n <- length(flds)
+      reducer_info <- vapply(names(flds), function(nm) {
+        paste0(nm, " (", flds[[nm]]$type, "/", flds[[nm]]$reducer, ")")
+      }, character(1))
+      cli::cli_text("<{.cls StateSchema}>")
+      cli::cli_ul(c(
+        "Fields ({n}): {paste(reducer_info, collapse = ', ')}",
+        "Max append: {private$.max_append}"
+      ))
+      invisible(self)
     }
   ),
 
@@ -106,7 +119,7 @@ StateSchema <- R6::R6Class(
 
     parse_spec = function(spec) {
       if (!is.character(spec) || length(spec) != 1L) {
-        rlang::abort("Each field spec must be a single string.", call = NULL)
+        cli::cli_abort("Each field spec must be a single string.")
       }
       if (grepl("^append:", spec)) {
         type_part <- sub("^append:", "", spec)
@@ -191,13 +204,13 @@ state_snapshot_class <- S7::new_class("state_snapshot", properties = list(
 #' snap@step
 new_state_snapshot <- function(state, node, step) {
   if (!is.list(state)) {
-    rlang::abort("`state` must be a list.", call = NULL)
+    cli::cli_abort("{.arg state} must be a list.")
   }
   if (!is.character(node) || length(node) != 1L) {
-    rlang::abort("`node` must be a single character string.", call = NULL)
+    cli::cli_abort("{.arg node} must be a single character string.")
   }
   if (!is.numeric(step) || length(step) != 1L) {
-    rlang::abort("`step` must be a single number.", call = NULL)
+    cli::cli_abort("{.arg step} must be a single number.")
   }
   state_snapshot_class(state = state, node = node, step = as.integer(step))
 }

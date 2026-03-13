@@ -56,6 +56,6 @@ a$invoke("What is R?")
 }
 \seealso{
 Other agents: 
-\code{\link{react_graph}()}
+\code{\link{graph_react}()}
 }
 \concept{agents}

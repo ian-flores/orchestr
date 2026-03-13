@@ -39,7 +39,7 @@ test_that("as_node() handles character input_key", {
 })
 
 test_that("as_node() rejects non-Agent", {
-  expect_error(as_node("not an agent"), "Agent object")
+  expect_error(as_node("not an agent"), "Agent.*object")
 })
 
 

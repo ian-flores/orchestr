@@ -18,7 +18,7 @@ Returns a handler function that processes pending tool calls in the state.
 \note{
 These functions are for manual tool dispatch in custom node handlers.
 When using \code{\link[=agent]{Agent}} objects with ellmer, tool calling is handled
-internally by ellmer's Chat class. See \code{\link{react_graph}} for the
+internally by ellmer's Chat class. See \code{\link{graph_react}} for the
 recommended pattern.
 }
 \examples{

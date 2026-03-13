@@ -197,7 +197,7 @@ test_that("run_node wraps handler errors with node name", {
   g$set_entry_point("failing_node")
   ag <- g$compile()
 
-  expect_error(ag$invoke(list()), "Error in node 'failing_node'")
+  expect_error(ag$invoke(list()), "Error in node.*failing_node")
 })
 
 
@@ -248,8 +248,8 @@ test_that("get_edges() returns edge specs", {
 
 test_that("print() outputs graph info", {
   ag <- build_linear_graph()
-  expect_output(print(ag), "AgentGraph")
-  expect_output(print(ag), "a, b")
+  expect_message(print(ag), "AgentGraph")
+  expect_message(print(ag), "a, b")
 })
 
 test_that("format() returns string", {
@@ -268,7 +268,7 @@ test_that("node with no outgoing edge errors at compile time", {
   g$add_edge("a", "b")
   # b has no edge out
   g$set_entry_point("a")
-  expect_error(g$compile(), "Dead-end nodes")
+  expect_error(g$compile(), "Dead-end node")
 })
 
 

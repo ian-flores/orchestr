@@ -4,7 +4,8 @@
 #' @import S7
 #' @importFrom rlang abort warn inform check_installed is_installed is_named
 #'   arg_match %||% signal cnd
-#' @importFrom cli cli_h3 cli_ul cli_li cli_end
+#' @importFrom cli cli_h3 cli_ul cli_li cli_end cli_abort cli_text
+#' @importFrom lifecycle deprecate_warn
 #' @importFrom R6 R6Class
 #' @importFrom jsonlite toJSON fromJSON read_json write_json
 #' @importFrom methods is

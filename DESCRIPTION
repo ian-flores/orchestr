@@ -26,6 +26,7 @@ Imports:
     cli,
     ellmer (>= 0.4.0),
     jsonlite,
+    lifecycle,
     methods,
     R6,
     rlang (>= 1.1.0),

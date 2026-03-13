@@ -24,7 +24,7 @@ Memory <- R6::R6Class(
 
       if (backend == "file") {
         if (is.null(path)) {
-          rlang::abort("File backend requires a `path` argument.", call = NULL)
+          cli::cli_abort("File backend requires a {.arg path} argument.")
         }
         private$path <- path
         if (file.exists(path)) {
@@ -100,6 +100,18 @@ Memory <- R6::R6Class(
       private$store <- list()
       private$persist()
       invisible(self)
+    },
+
+    #' @description Print method
+    #' @param ... Ignored.
+    print = function(...) {
+      n_keys <- length(private$store)
+      cli::cli_text("<{.cls Memory}>")
+      cli::cli_ul(c(
+        "Backend: {.val {private$backend}}",
+        "Keys: {n_keys}"
+      ))
+      invisible(self)
     }
   ),
 
@@ -110,7 +122,7 @@ Memory <- R6::R6Class(
 
     check_key = function(key) {
       if (!is.character(key) || length(key) != 1L || nchar(key) == 0L) {
-        rlang::abort("`key` must be a non-empty single character string.", call = NULL)
+        cli::cli_abort("{.arg key} must be a non-empty single character string.")
       }
     },
 

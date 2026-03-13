@@ -24,7 +24,7 @@ Checkpointer <- R6::R6Class(
 
       if (backend == "file") {
         if (is.null(path)) {
-          rlang::abort("File backend requires a `path` argument.", call = NULL)
+          cli::cli_abort("File backend requires a {.arg path} argument.")
         }
         private$path <- path
         if (!dir.exists(path)) {
@@ -43,10 +43,10 @@ Checkpointer <- R6::R6Class(
     save = function(thread_id, node_name, state) {
       private$check_thread_id(thread_id)
       if (!is.character(node_name) || length(node_name) != 1L) {
-        rlang::abort("`node_name` must be a single character string.", call = NULL)
+        cli::cli_abort("{.arg node_name} must be a single character string.")
       }
       if (!is.list(state)) {
-        rlang::abort("`state` must be a list.", call = NULL)
+        cli::cli_abort("{.arg state} must be a list.")
       }
 
       entry <- list(
@@ -90,6 +90,16 @@ Checkpointer <- R6::R6Class(
     history = function(thread_id) {
       private$check_thread_id(thread_id)
       private$get_snapshots(thread_id)
+    },
+
+    #' @description Print method
+    #' @param ... Ignored.
+    print = function(...) {
+      cli::cli_text("<{.cls Checkpointer}>")
+      cli::cli_ul(c(
+        "Backend: {.val {private$backend}}"
+      ))
+      invisible(self)
     }
   ),
 
@@ -101,10 +111,10 @@ Checkpointer <- R6::R6Class(
     check_thread_id = function(thread_id) {
       if (!is.character(thread_id) || length(thread_id) != 1L ||
           nchar(thread_id) == 0L) {
-        rlang::abort("`thread_id` must be a non-empty single character string.", call = NULL)
+        cli::cli_abort("{.arg thread_id} must be a non-empty single character string.")
       }
       if (nchar(thread_id) > 200L) {
-        rlang::abort("`thread_id` must be 200 characters or fewer.", call = NULL)
+        cli::cli_abort("{.arg thread_id} must be 200 characters or fewer.")
       }
     },
 

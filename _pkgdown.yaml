@@ -22,9 +22,9 @@ reference:
       - route_to
   - title: Convenience Graphs
     contents:
-      - react_graph
-      - pipeline_graph
-      - supervisor_graph
+      - graph_react
+      - graph_pipeline
+      - graph_supervisor
   - title: Memory & Persistence
     contents:
       - memory

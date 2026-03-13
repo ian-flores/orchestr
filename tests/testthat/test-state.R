@@ -28,7 +28,7 @@ test_that("validate() rejects wrong types", {
 
 test_that("validate() rejects unknown fields", {
   schema <- state_schema(x = "numeric")
-  expect_error(schema$validate(list(z = 1)), "Unknown state fields")
+  expect_error(schema$validate(list(z = 1)), "Unknown state field")
 })
 
 test_that("validate() passes for 'any' type", {

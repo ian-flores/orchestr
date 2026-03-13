@@ -15,7 +15,7 @@ GraphBuilder <- R6::R6Class(
     #' @param state_schema Optional `StateSchema` for typed state with reducers.
     initialize = function(state_schema = NULL) {
       if (!is.null(state_schema) && !inherits(state_schema, "StateSchema")) {
-        rlang::abort("`state_schema` must be a StateSchema object or NULL.", call = NULL)
+        cli::cli_abort("{.arg state_schema} must be a {.cls StateSchema} object or {.code NULL}.")
       }
       private$schema <- state_schema
       private$nodes <- list()
@@ -34,13 +34,13 @@ GraphBuilder <- R6::R6Class(
     add_node = function(name, handler) {
       private$check_name(name)
       if (name == END) {
-        rlang::abort("Cannot use reserved name '__end__' as a node name.", call = NULL)
+        cli::cli_abort("Cannot use reserved name {.val __end__} as a node name.")
       }
       if (name %in% names(private$nodes)) {
-        rlang::abort(paste0("Node '", name, "' already exists."), call = NULL)
+        cli::cli_abort("Node {.val {name}} already exists.")
       }
       if (!is.function(handler) && !inherits(handler, "Agent")) {
-        rlang::abort("`handler` must be a function or an Agent object.", call = NULL)
+        cli::cli_abort("{.arg handler} must be a function or an {.cls Agent} object.")
       }
       if (inherits(handler, "Agent")) {
         handler <- as_node(handler)
@@ -56,14 +56,13 @@ GraphBuilder <- R6::R6Class(
     add_edge = function(from, to) {
       private$check_name(from)
       if (!is.character(to) || length(to) != 1L) {
-        rlang::abort("`to` must be a single character string.", call = NULL)
+        cli::cli_abort("{.arg to} must be a single character string.")
       }
       # Check for conflicting conditional edge
       cond_sources <- vapply(private$conditional_edges, `[[`, character(1), "from")
       if (from %in% cond_sources) {
-        rlang::abort(
-          paste0("Node '", from, "' already has a conditional edge; cannot add a fixed edge."),
-          call = NULL
+        cli::cli_abort(
+          "Node {.val {from}} already has a conditional edge; cannot add a fixed edge."
         )
       }
       private$edges <- c(private$edges, list(list(from = from, to = to)))
@@ -78,17 +77,16 @@ GraphBuilder <- R6::R6Class(
     add_conditional_edge = function(from, condition, mapping) {
       private$check_name(from)
       if (!is.function(condition)) {
-        rlang::abort("`condition` must be a function.", call = NULL)
+        cli::cli_abort("{.arg condition} must be a function.")
       }
       if (!is.list(mapping) || !rlang::is_named(mapping)) {
-        rlang::abort("`mapping` must be a named list.", call = NULL)
+        cli::cli_abort("{.arg mapping} must be a named list.")
       }
       # Check for conflicting fixed edge
       fixed_sources <- vapply(private$edges, `[[`, character(1), "from")
       if (from %in% fixed_sources) {
-        rlang::abort(
-          paste0("Node '", from, "' already has a fixed edge; cannot add a conditional edge."),
-          call = NULL
+        cli::cli_abort(
+          "Node {.val {from}} already has a fixed edge; cannot add a conditional edge."
         )
       }
       private$conditional_edges <- c(
@@ -126,7 +124,7 @@ GraphBuilder <- R6::R6Class(
     #' @return Self (for chaining)
     set_checkpointer = function(checkpointer) {
       if (!inherits(checkpointer, "Checkpointer")) {
-        rlang::abort("`checkpointer` must be a Checkpointer object.", call = NULL)
+        cli::cli_abort("{.arg checkpointer} must be a {.cls Checkpointer} object.")
       }
       private$cp <- checkpointer
       invisible(self)
@@ -140,12 +138,12 @@ GraphBuilder <- R6::R6Class(
     compile = function(max_iterations = 100L, verbose = FALSE) {
       # Validate entry point
       if (is.null(private$entry)) {
-        rlang::abort("Entry point must be set before compiling.", call = NULL)
+        cli::cli_abort("Entry point must be set before compiling.")
       }
       if (!private$entry %in% names(private$nodes)) {
-        rlang::abort(paste0(
-          "Entry point '", private$entry, "' is not a registered node."
-        ), call = NULL)
+        cli::cli_abort(
+          "Entry point {.val {private$entry}} is not a registered node."
+        )
       }
 
       # Validate edge targets
@@ -154,24 +152,24 @@ GraphBuilder <- R6::R6Class(
 
       for (e in private$edges) {
         if (!e$from %in% all_node_names) {
-          rlang::abort(paste0("Edge source '", e$from, "' is not a registered node."), call = NULL)
+          cli::cli_abort("Edge source {.val {e$from}} is not a registered node.")
         }
         if (!e$to %in% valid_targets) {
-          rlang::abort(paste0("Edge target '", e$to, "' is not a registered node or END."), call = NULL)
+          cli::cli_abort("Edge target {.val {e$to}} is not a registered node or {.code END}.")
         }
       }
 
       for (ce in private$conditional_edges) {
         if (!ce$from %in% all_node_names) {
-          rlang::abort(paste0(
-            "Conditional edge source '", ce$from, "' is not a registered node."
-          ), call = NULL)
+          cli::cli_abort(
+            "Conditional edge source {.val {ce$from}} is not a registered node."
+          )
         }
         for (target in ce$mapping) {
           if (!target %in% valid_targets) {
-            rlang::abort(paste0(
-              "Conditional edge target '", target, "' is not a registered node or END."
-            ), call = NULL)
+            cli::cli_abort(
+              "Conditional edge target {.val {target}} is not a registered node or {.code END}."
+            )
           }
         }
       }
@@ -184,35 +182,22 @@ GraphBuilder <- R6::R6Class(
       has_outgoing <- union(fixed_sources, cond_sources)
       dead_ends <- setdiff(all_node_names, has_outgoing)
       if (length(dead_ends) > 0L) {
-        rlang::abort(
-          paste0(
-            "Dead-end nodes with no outgoing edge: ",
-            paste(dead_ends, collapse = ", "),
-            ". Add an edge from each or route to END."
-          ),
-          call = NULL
+        cli::cli_abort(
+          "Dead-end node{?s} with no outgoing edge: {.val {dead_ends}}. Add an edge from each or route to {.code END}."
         )
       }
 
       # Validate interrupt node names reference actual nodes
       bad_before <- setdiff(private$interrupt_before, all_node_names)
       if (length(bad_before) > 0L) {
-        rlang::abort(
-          paste0(
-            "interrupt_before references unknown nodes: ",
-            paste(bad_before, collapse = ", ")
-          ),
-          call = NULL
+        cli::cli_abort(
+          "{.arg interrupt_before} references unknown node{?s}: {.val {bad_before}}."
         )
       }
       bad_after <- setdiff(private$interrupt_after, all_node_names)
       if (length(bad_after) > 0L) {
-        rlang::abort(
-          paste0(
-            "interrupt_after references unknown nodes: ",
-            paste(bad_after, collapse = ", ")
-          ),
-          call = NULL
+        cli::cli_abort(
+          "{.arg interrupt_after} references unknown node{?s}: {.val {bad_after}}."
         )
       }
 
@@ -229,10 +214,7 @@ GraphBuilder <- R6::R6Class(
       # Validate max_iterations before coercion to avoid warnings from as.integer()
       if (!is.numeric(max_iterations) || length(max_iterations) != 1L ||
           !is.finite(max_iterations) || max_iterations < 1) {
-        rlang::abort(
-          "max_iterations must be a finite positive integer.",
-          call = NULL
-        )
+        cli::cli_abort("{.arg max_iterations} must be a finite positive integer.")
       }
 
       AgentGraph$new(
@@ -252,12 +234,15 @@ GraphBuilder <- R6::R6Class(
     #' @description Print the builder
     #' @param ... Ignored.
     print = function(...) {
-      cli::cli_h3("GraphBuilder")
-      cli::cli_ul()
-      cli::cli_li("Nodes: {paste(names(private$nodes), collapse = ', ')}")
-      cli::cli_li("Entry: {private$entry %||% '(not set)'}")
-      cli::cli_li("Edges: {length(private$edges)} fixed, {length(private$conditional_edges)} conditional")
-      cli::cli_end()
+      n_nodes <- length(private$nodes)
+      n_fixed <- length(private$edges)
+      n_cond <- length(private$conditional_edges)
+      cli::cli_text("<{.cls GraphBuilder}>")
+      cli::cli_ul(c(
+        "Nodes ({n_nodes}): {paste(names(private$nodes), collapse = ', ')}",
+        "Entry: {private$entry %||% '(not set)'}",
+        "Edges: {n_fixed} fixed, {n_cond} conditional"
+      ))
       invisible(self)
     }
   ),
@@ -274,7 +259,7 @@ GraphBuilder <- R6::R6Class(
 
     check_name = function(name) {
       if (!is.character(name) || length(name) != 1L || !nzchar(name)) {
-        rlang::abort("Node name must be a non-empty single character string.", call = NULL)
+        cli::cli_abort("Node name must be a non-empty single character string.")
       }
     },
 

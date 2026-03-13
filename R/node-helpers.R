@@ -14,7 +14,7 @@
 #' }
 as_node <- function(agent, input_key = "messages", output_key = "messages") {
   if (!inherits(agent, "Agent")) {
-    rlang::abort("`agent` must be an Agent object.", call = NULL)
+    cli::cli_abort("{.arg agent} must be an {.cls Agent} object.")
   }
   function(state, config) {
     msgs <- state[[input_key]]
@@ -40,7 +40,7 @@ as_node <- function(agent, input_key = "messages", output_key = "messages") {
 #' @return A function suitable for use as a graph node handler.
 #' @note These functions are for manual tool dispatch in custom node handlers.
 #' When using \code{\link[=agent]{Agent}} objects with ellmer, tool calling is handled
-#' internally by ellmer's Chat class. See \code{\link{react_graph}} for the
+#' internally by ellmer's Chat class. See \code{\link{graph_react}} for the
 #' recommended pattern.
 #' @family node-helpers
 #' @export
@@ -51,7 +51,7 @@ as_node <- function(agent, input_key = "messages", output_key = "messages") {
 #' }
 tool_node <- function(tools) {
   if (!is.list(tools) || !rlang::is_named(tools)) {
-    rlang::abort("`tools` must be a named list of functions.", call = NULL)
+    cli::cli_abort("{.arg tools} must be a named list of functions.")
   }
   function(state, config) {
     tool_results <- list()
@@ -79,7 +79,7 @@ tool_node <- function(tools) {
 #' @return Character string: either a tool node name or \code{END}.
 #' @note These functions are for manual tool dispatch in custom node handlers.
 #' When using \code{\link[=agent]{Agent}} objects with ellmer, tool calling is handled
-#' internally by ellmer's Chat class. See \code{\link{react_graph}} for the
+#' internally by ellmer's Chat class. See \code{\link{graph_react}} for the
 #' recommended pattern.
 #' @family node-helpers
 #' @export
@@ -103,7 +103,7 @@ route_tool_calls <- function(state) {
 #' router(list())
 route_to <- function(node_name) {
   if (!is.character(node_name) || length(node_name) != 1L) {
-    rlang::abort("`node_name` must be a single character string.", call = NULL)
+    cli::cli_abort("{.arg node_name} must be a single character string.")
   }
   function(state) node_name
 }

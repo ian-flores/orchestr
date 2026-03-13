@@ -17,12 +17,12 @@
 #' \dontrun{
 #' chat <- ellmer::chat_openai(model = "gpt-4o")
 #' a <- agent("assistant", chat)
-#' graph <- react_graph(a)
+#' graph <- graph_react(a)
 #' graph$invoke(list(messages = list("Hello")))
 #' }
-react_graph <- function(agent, max_iterations = 10L) {
+graph_react <- function(agent, max_iterations = 10L) {
   if (!inherits(agent, "Agent")) {
-    rlang::abort("`agent` must be an Agent object.", call = NULL)
+    cli::cli_abort("{.arg agent} must be an {.cls Agent} object.")
   }
 
   schema <- state_schema(messages = "append:list")
@@ -31,6 +31,18 @@ react_graph <- function(agent, max_iterations = 10L) {
   gb$add_edge("agent", END)
   gb$set_entry_point("agent")
   gb$compile(max_iterations = max_iterations)
+}
+
+#' @description
+#' `react_graph()` was renamed to `graph_react()` in version 0.2.0 and
+#' is now deprecated.
+#'
+#' @param ... Arguments passed to [graph_react()].
+#' @rdname graph_react
+#' @export
+react_graph <- function(...) {
+  lifecycle::deprecate_warn("0.2.0", "react_graph()", "graph_react()")
+  graph_react(...)
 }
 
 #' Create a sequential pipeline graph
@@ -47,17 +59,17 @@ react_graph <- function(agent, max_iterations = 10L) {
 #' \dontrun{
 #' chat1 <- ellmer::chat_openai(model = "gpt-4o")
 #' chat2 <- ellmer::chat_openai(model = "gpt-4o")
-#' graph <- pipeline_graph(agent("drafter", chat1), agent("reviewer", chat2))
+#' graph <- graph_pipeline(agent("drafter", chat1), agent("reviewer", chat2))
 #' graph$invoke(list(messages = list("Write a poem")))
 #' }
-pipeline_graph <- function(..., max_iterations = 100L) {
+graph_pipeline <- function(..., max_iterations = 100L) {
   agents <- list(...)
   if (length(agents) == 0L) {
-    rlang::abort("At least one agent is required.", call = NULL)
+    cli::cli_abort("At least one agent is required.")
   }
   for (a in agents) {
     if (!inherits(a, "Agent")) {
-      rlang::abort("All arguments must be Agent objects.", call = NULL)
+      cli::cli_abort("All arguments must be {.cls Agent} objects.")
     }
   }
 
@@ -83,6 +95,13 @@ pipeline_graph <- function(..., max_iterations = 100L) {
   gb$compile(max_iterations = max_iterations)
 }
 
+#' @rdname graph_pipeline
+#' @export
+pipeline_graph <- function(...) {
+  lifecycle::deprecate_warn("0.2.0", "pipeline_graph()", "graph_pipeline()")
+  graph_pipeline(...)
+}
+
 #' Create a supervisor graph that routes to workers
 #'
 #' The supervisor agent decides which worker to invoke based on its response.
@@ -104,18 +123,18 @@ pipeline_graph <- function(..., max_iterations = 100L) {
 #' sup <- agent("boss", ellmer::chat_openai(model = "gpt-4o"))
 #' w1 <- agent("coder", ellmer::chat_openai(model = "gpt-4o"))
 #' w2 <- agent("tester", ellmer::chat_openai(model = "gpt-4o"))
-#' graph <- supervisor_graph(sup, list(coder = w1, tester = w2))
+#' graph <- graph_supervisor(sup, list(coder = w1, tester = w2))
 #' }
-supervisor_graph <- function(supervisor, workers, max_iterations = 50L) {
+graph_supervisor <- function(supervisor, workers, max_iterations = 50L) {
   if (!inherits(supervisor, "Agent")) {
-    rlang::abort("`supervisor` must be an Agent object.", call = NULL)
+    cli::cli_abort("{.arg supervisor} must be an {.cls Agent} object.")
   }
   if (!is.list(workers) || !rlang::is_named(workers)) {
-    rlang::abort("`workers` must be a named list of Agent objects.", call = NULL)
+    cli::cli_abort("{.arg workers} must be a named list of {.cls Agent} objects.")
   }
   for (w in workers) {
     if (!inherits(w, "Agent")) {
-      rlang::abort("All workers must be Agent objects.", call = NULL)
+      cli::cli_abort("All workers must be {.cls Agent} objects.")
     }
   }
 
@@ -194,4 +213,16 @@ supervisor_graph <- function(supervisor, workers, max_iterations = 50L) {
   }
   gb$set_entry_point("supervisor")
   gb$compile(max_iterations = max_iterations)
+}
+
+#' @description
+#' `supervisor_graph()` was renamed to `graph_supervisor()` in version 0.2.0
+#' and is now deprecated.
+#'
+#' @param ... Arguments passed to [graph_supervisor()].
+#' @rdname graph_supervisor
+#' @export
+supervisor_graph <- function(...) {
+  lifecycle::deprecate_warn("0.2.0", "supervisor_graph()", "graph_supervisor()")
+  graph_supervisor(...)
 }

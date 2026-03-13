@@ -27,7 +27,7 @@ test_that("add_node() rejects END as name", {
 
 test_that("add_node() rejects non-function/non-Agent handlers", {
   g <- graph_builder()
-  expect_error(g$add_node("a", "not a function"), "function or an Agent")
+  expect_error(g$add_node("a", "not a function"), "function or an.*Agent")
 })
 
 test_that("method chaining works", {
@@ -56,7 +56,7 @@ test_that("compile() errors with invalid edge target", {
   g$add_node("a", function(s, c) list())
   g$add_edge("a", "nonexistent")
   g$set_entry_point("a")
-  expect_error(g$compile(), "not a registered node or END")
+  expect_error(g$compile(), "not a registered node or.*END")
 })
 
 test_that("compile() errors with invalid edge source", {
@@ -91,7 +91,7 @@ test_that("compile() validates conditional edge targets", {
   g$add_node("a", function(s, c) list())
   g$add_conditional_edge("a", function(s) "go", list(go = "nowhere"))
   g$set_entry_point("a")
-  expect_error(g$compile(), "not a registered node or END")
+  expect_error(g$compile(), "not a registered node or.*END")
 })
 
 test_that("compile() validates conditional edge source", {

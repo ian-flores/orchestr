@@ -29,10 +29,7 @@ AgentGraph <- R6::R6Class(
                           max_iterations, verbose = FALSE) {
       if (!is.numeric(max_iterations) || length(max_iterations) != 1L ||
           !is.finite(max_iterations) || max_iterations < 1L) {
-        rlang::abort(
-          "max_iterations must be a finite positive integer.",
-          call = NULL
-        )
+        cli::cli_abort("{.arg max_iterations} must be a finite positive integer.")
       }
       private$nodes <- nodes
       private$edges <- edges
@@ -335,10 +332,16 @@ AgentGraph <- R6::R6Class(
     #' @description Print method
     #' @param ... Ignored.
     print = function(...) {
-      cat("<AgentGraph>\n")
-      cat("  Nodes:", paste(names(private$nodes), collapse = ", "), "\n")
-      cat("  Entry:", private$entry, "\n")
-      cat("  Max iterations:", private$max_iterations, "\n")
+      n_nodes <- length(private$nodes)
+      n_fixed <- length(private$edges)
+      n_cond <- length(private$conditional_edges)
+      cli::cli_text("<{.cls AgentGraph}>")
+      cli::cli_ul(c(
+        "Nodes ({n_nodes}): {paste(names(private$nodes), collapse = ', ')}",
+        "Entry: {.val {private$entry}}",
+        "Edges: {n_fixed} fixed, {n_cond} conditional",
+        "Max iterations: {private$max_iterations}"
+      ))
       invisible(self)
     },
 
@@ -374,18 +377,16 @@ AgentGraph <- R6::R6Class(
       result <- tryCatch(
         handler(state, config),
         error = function(e) {
-          rlang::abort(
-            paste0("Error in node '", node_name, "': ", conditionMessage(e)),
-            parent = e,
-            call = NULL
+          cli::cli_abort(
+            "Error in node {.val {node_name}}: {conditionMessage(e)}",
+            parent = e
           )
         }
       )
 
       if (!is.list(result)) {
-        rlang::abort(
-          paste0("Node '", node_name, "' handler must return a named list of state updates."),
-          call = NULL
+        cli::cli_abort(
+          "Node {.val {node_name}} handler must return a named list of state updates."
         )
       }
 
@@ -403,22 +404,14 @@ AgentGraph <- R6::R6Class(
       if (!is.null(ce)) {
         key <- ce$condition(state)
         if (!is.character(key) || length(key) != 1L) {
-          rlang::abort(
-            paste0(
-              "Condition function for node '", node_name,
-              "' must return a single character key."
-            ),
-            call = NULL
+          cli::cli_abort(
+            "Condition function for node {.val {node_name}} must return a single character key."
           )
         }
         target <- ce$mapping[[key]]
         if (is.null(target)) {
-          rlang::abort(
-            paste0(
-              "Condition returned '", key,
-              "' but no mapping exists for that key from node '", node_name, "'."
-            ),
-            call = NULL
+          cli::cli_abort(
+            "Condition returned {.val {key}} but no mapping exists for that key from node {.val {node_name}}."
           )
         }
         return(target)
@@ -430,10 +423,7 @@ AgentGraph <- R6::R6Class(
         return(target)
       }
 
-      rlang::abort(
-        paste0("No edge found from node '", node_name, "'. Dead end."),
-        call = NULL
-      )
+      cli::cli_abort("No edge found from node {.val {node_name}}. Dead end.")
     },
 
     signal_interrupt = function(state, node_name, step) {
