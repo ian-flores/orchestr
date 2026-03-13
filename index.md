@@ -96,7 +96,7 @@ See ellmer’s documentation for all supported providers.
 ### Single Agent (ReAct)
 
 The
-[`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md)
+[`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
 function wraps a single agent with state management and checkpointing.
 ellmer’s `Chat` class handles tool call loops internally – when an agent
 has registered tools, they are executed automatically during `$chat()`.
@@ -115,7 +115,7 @@ result <- graph$invoke(list(messages = list("What is the mean of c(1,2,3,4,5)?")
 
 ### Agent Pipeline
 
-[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md)
+[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
 chains agents in sequence. Each agent processes the state and passes it
 to the next. One LLM call per agent in the pipeline.
 
@@ -134,7 +134,7 @@ result <- pipeline$invoke(list(messages = list("Benefits of open source.")))
 
 ### Supervisor Routing
 
-[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/supervisor_graph.md)
+[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
 creates a supervisor that routes tasks to specialized workers. The
 supervisor decides which worker to invoke (or to finish) by calling an
 automatically injected `route` tool.
@@ -165,9 +165,9 @@ result <- graph$invoke(list(messages = list("Calculate the integral of x^2 from 
 Each node in a graph that calls an LLM makes an API request. Be mindful
 of costs:
 
-- [`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md):
+- [`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md):
   The agent runs once, with ellmer handling any tool calls internally
-- [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md):
+- [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md):
   One LLM call per agent in the pipeline
 - `supervisor_graph(max_iterations = 50)`: Up to 50+ LLM calls
   (supervisor routing + worker execution). Start with low

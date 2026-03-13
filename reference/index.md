@@ -34,11 +34,14 @@
 
 ## Convenience Graphs
 
-- [`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md)
+- [`graph_react()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
+  [`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
   : Create a ReAct (Reasoning + Acting) agent graph
-- [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md)
+- [`graph_pipeline()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
+  [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
   : Create a sequential pipeline graph
-- [`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/supervisor_graph.md)
+- [`graph_supervisor()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
+  [`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
   : Create a supervisor graph that routes to workers
 
 ## Memory & Persistence

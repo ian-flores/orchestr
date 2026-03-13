@@ -26,7 +26,7 @@ When using
 [`Agent`](https://ian-flores.github.io/orchestr/reference/Agent.md)
 objects with ellmer, tool calling is handled internally by ellmer's Chat
 class. See
-[`react_graph`](https://ian-flores.github.io/orchestr/reference/react_graph.md)
+[`graph_react`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
 for the recommended pattern.
 
 ## See also

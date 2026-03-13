@@ -11,9 +11,9 @@
   methods.
 - `StateSchema` typed state with overwrite and append reducers.
 - Convenience constructors:
-  [`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md),
-  [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md),
-  [`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/supervisor_graph.md).
+  [`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md),
+  [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md),
+  [`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md).
 - `Memory` R6 class for key-value persistence (memory and file
   backends).
 - `Checkpointer` R6 class for workflow state persistence (memory and

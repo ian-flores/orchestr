@@ -66,7 +66,7 @@ The `chat` object must implement these methods:
 ## See also
 
 Other agents:
-[`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md)
+[`graph_react()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
 
 ## Examples
 

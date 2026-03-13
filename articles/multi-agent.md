@@ -54,7 +54,7 @@ The pipeline flow looks like this:
                                         [Final Output]
 
 Use
-[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md)
+[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
 for a concise setup, or
 [`graph_builder()`](https://ian-flores.github.io/orchestr/reference/graph_builder.md)
 for full control.
@@ -115,9 +115,9 @@ result <- graph$invoke(list(messages = list(
 
 For conditional edges, cycles, or custom node functions, use the builder
 API.
-[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md)
+[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
 and
-[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/supervisor_graph.md)
+[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
 use this same API internally. The builder exposes the full graph
 topology: add nodes, wire edges (including conditional edges), and set
 the entry point explicitly.

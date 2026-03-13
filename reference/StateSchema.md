@@ -29,6 +29,8 @@ constructor function.
 
 - [`StateSchema$field_names()`](#method-StateSchema-field_names)
 
+- [`StateSchema$print()`](#method-StateSchema-print)
+
 - [`StateSchema$clone()`](#method-StateSchema-clone)
 
 ------------------------------------------------------------------------
@@ -113,6 +115,22 @@ Get field names defined in this schema
 #### Returns
 
 Character vector of field names
+
+------------------------------------------------------------------------
+
+### Method [`print()`](https://rdrr.io/r/base/print.html)
+
+Print method
+
+#### Usage
+
+    StateSchema$print(...)
+
+#### Arguments
+
+- `...`:
+
+  Ignored.
 
 ------------------------------------------------------------------------
 

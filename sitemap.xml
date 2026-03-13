@@ -22,19 +22,19 @@
 <url><loc>https://ian-flores.github.io/orchestr/reference/as_node.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/checkpointer.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/graph_builder.html</loc></url>
+<url><loc>https://ian-flores.github.io/orchestr/reference/graph_pipeline.html</loc></url>
+<url><loc>https://ian-flores.github.io/orchestr/reference/graph_react.html</loc></url>
+<url><loc>https://ian-flores.github.io/orchestr/reference/graph_supervisor.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/index.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/memory.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/merge_state_plain.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/new_interrupt.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/new_state_snapshot.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/orchestr-package.html</loc></url>
-<url><loc>https://ian-flores.github.io/orchestr/reference/pipeline_graph.html</loc></url>
-<url><loc>https://ian-flores.github.io/orchestr/reference/react_graph.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/route_to.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/route_tool_calls.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/state_schema.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/state_snapshot_class.html</loc></url>
-<url><loc>https://ian-flores.github.io/orchestr/reference/supervisor_graph.html</loc></url>
 <url><loc>https://ian-flores.github.io/orchestr/reference/tool_node.html</loc></url>
 </urlset>
 

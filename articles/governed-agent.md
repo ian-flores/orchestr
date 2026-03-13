@@ -67,7 +67,7 @@ my_agent <- agent(
 ```
 
 The
-[`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md)
+[`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
 convenience function wraps the agent in a ReAct (Reasoning + Acting)
 loop with a safety cap on iterations:
 

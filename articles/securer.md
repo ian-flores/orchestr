@@ -190,9 +190,9 @@ analyst$close()
 ```
 
 You can also use
-[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md)
+[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
 and
-[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/supervisor_graph.md)
+[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
 with secure agents. Use `verbose = TRUE` on `compile()` or `$invoke()`
 to trace execution flow:
 

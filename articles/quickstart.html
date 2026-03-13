@@ -91,7 +91,7 @@ to continue or stop:</p>
    |                  |
    +------ loop ------+
          (until done or max iterations)</code></pre>
-<p>This loop is implemented by <code><a href="../reference/react_graph.html">react_graph()</a></code> and runs
+<p>This loop is implemented by <code><a href="../reference/graph_react.html">react_graph()</a></code> and runs
 within a safety cap (<code>max_iterations</code>) to prevent runaway LLM
 calls.</p>
 </div>
@@ -162,8 +162,8 @@ works the same regardless of the backing model.</p>
 <span>  endpoint <span class="op">=</span> <span class="st">"https://my-resource.openai.azure.com"</span>,</span>
 <span>  deployment_id <span class="op">=</span> <span class="st">"gpt-4o"</span></span>
 <span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>All graph types (<code><a href="../reference/react_graph.html">react_graph()</a></code>,
-<code><a href="../reference/pipeline_graph.html">pipeline_graph()</a></code>, <code><a href="../reference/supervisor_graph.html">supervisor_graph()</a></code>) work
+<p>All graph types (<code><a href="../reference/graph_react.html">react_graph()</a></code>,
+<code><a href="../reference/graph_pipeline.html">pipeline_graph()</a></code>, <code><a href="../reference/graph_supervisor.html">supervisor_graph()</a></code>) work
 identically regardless of which provider backs the agent.</p>
 </div>
 <div class="section level2">
@@ -219,7 +219,7 @@ response.</p>
 <div class="section level2">
 <h2 id="single-agent-graph-with-react_graph">Single-agent graph with <code>react_graph()</code><a class="anchor" aria-label="anchor" href="#single-agent-graph-with-react_graph"></a>
 </h2>
-<p><code><a href="../reference/react_graph.html">react_graph()</a></code> wraps a single agent in a graph that adds
+<p><code><a href="../reference/graph_react.html">react_graph()</a></code> wraps a single agent in a graph that adds
 three things a bare agent lacks: state management (a typed state object
 persists across iterations), checkpointing (save and resume mid-run),
 and tracing (pass a securetrace <code>Trace</code> to instrument every
@@ -231,7 +231,7 @@ many.</p>
 <span>  system_prompt <span class="op">=</span> <span class="st">"You are a data analyst. Analyze data and provide insights."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/react_graph.html">react_graph</a></span><span class="op">(</span><span class="va">analyst</span><span class="op">)</span></span>
+<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_react.html">react_graph</a></span><span class="op">(</span><span class="va">analyst</span><span class="op">)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">graph</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="st">"What are the key relationships in the mtcars dataset?"</span></span>
 <span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -261,7 +261,7 @@ the execution order is fixed at graph construction time.</p>
 <span>  system_prompt <span class="op">=</span> <span class="st">"Given a data profile, identify patterns, correlations, and anomalies."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">pipeline</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pipeline_graph.html">pipeline_graph</a></span><span class="op">(</span><span class="va">profiler</span>, <span class="va">analyst</span><span class="op">)</span></span>
+<span><span class="va">pipeline</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_pipeline.html">pipeline_graph</a></span><span class="op">(</span><span class="va">profiler</span>, <span class="va">analyst</span><span class="op">)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">pipeline</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="st">"Analyze the mtcars dataset focusing on fuel efficiency factors."</span></span>
 <span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>

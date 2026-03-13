@@ -106,7 +106,7 @@ single monolithic prompt.</p>
                                           |
                                           v
                                     [Final Output]</code></pre>
-<p>Use <code><a href="../reference/pipeline_graph.html">pipeline_graph()</a></code> for a concise setup, or
+<p>Use <code><a href="../reference/graph_pipeline.html">pipeline_graph()</a></code> for a concise setup, or
 <code><a href="../reference/graph_builder.html">graph_builder()</a></code> for full control.</p>
 <div class="section level3">
 <h3 id="using-pipeline_graph">Using <code>pipeline_graph()</code><a class="anchor" aria-label="anchor" href="#using-pipeline_graph"></a>
@@ -125,7 +125,7 @@ orchestr wires the edges automatically.</p>
 <span>  system_prompt <span class="op">=</span> <span class="st">"Improve the following draft. Fix grammar and clarity."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">pipeline</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pipeline_graph.html">pipeline_graph</a></span><span class="op">(</span><span class="va">drafter</span>, <span class="va">editor</span><span class="op">)</span></span>
+<span><span class="va">pipeline</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_pipeline.html">pipeline_graph</a></span><span class="op">(</span><span class="va">drafter</span>, <span class="va">editor</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">pipeline</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Write about the benefits of open source software."</span><span class="op">)</span></span>
@@ -153,7 +153,7 @@ profiler’s output and the reporter can reference both.</p>
 <span>  system_prompt <span class="op">=</span> <span class="st">"Write a clear, non-technical summary of analytical findings."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pipeline_graph.html">pipeline_graph</a></span><span class="op">(</span><span class="va">profiler</span>, <span class="va">analyst</span>, <span class="va">reporter</span><span class="op">)</span></span>
+<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_pipeline.html">pipeline_graph</a></span><span class="op">(</span><span class="va">profiler</span>, <span class="va">analyst</span>, <span class="va">reporter</span><span class="op">)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">graph</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="st">"Analyze the mtcars dataset focusing on fuel efficiency factors."</span></span>
 <span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -162,8 +162,8 @@ profiler’s output and the reporter can reference both.</p>
 <h3 id="using-graph_builder-directly">Using <code>graph_builder()</code> directly<a class="anchor" aria-label="anchor" href="#using-graph_builder-directly"></a>
 </h3>
 <p>For conditional edges, cycles, or custom node functions, use the
-builder API. <code><a href="../reference/pipeline_graph.html">pipeline_graph()</a></code> and
-<code><a href="../reference/supervisor_graph.html">supervisor_graph()</a></code> use this same API internally. The
+builder API. <code><a href="../reference/graph_pipeline.html">pipeline_graph()</a></code> and
+<code><a href="../reference/graph_supervisor.html">supervisor_graph()</a></code> use this same API internally. The
 builder exposes the full graph topology: add nodes, wire edges
 (including conditional edges), and set the entry point explicitly.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
@@ -231,7 +231,7 @@ descriptions.</p>
 <span>  system_prompt <span class="op">=</span> <span class="st">"You are a writing expert. Help with writing tasks."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/supervisor_graph.html">supervisor_graph</a></span><span class="op">(</span></span>
+<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_supervisor.html">supervisor_graph</a></span><span class="op">(</span></span>
 <span>  supervisor <span class="op">=</span> <span class="va">supervisor</span>,</span>
 <span>  workers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>math <span class="op">=</span> <span class="va">math_worker</span>, writing <span class="op">=</span> <span class="va">writing_worker</span><span class="op">)</span>,</span>
 <span>  max_iterations <span class="op">=</span> <span class="fl">10</span></span>
@@ -272,7 +272,7 @@ This is useful for building progress indicators in interactive
 applications, or for debugging graph execution by looking at
 intermediate states.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pipeline</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pipeline_graph.html">pipeline_graph</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">pipeline</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_pipeline.html">pipeline_graph</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"drafter"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>    system_prompt <span class="op">=</span> <span class="st">"Write a short draft on the given topic."</span></span>
 <span>  <span class="op">)</span><span class="op">)</span>,</span>
@@ -307,7 +307,7 @@ editor).</p>
 <span>  system_prompt <span class="op">=</span> <span class="st">"Writing expert."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/supervisor_graph.html">supervisor_graph</a></span><span class="op">(</span></span>
+<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_supervisor.html">supervisor_graph</a></span><span class="op">(</span></span>
 <span>  supervisor <span class="op">=</span> <span class="va">supervisor</span>,</span>
 <span>  workers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>math <span class="op">=</span> <span class="va">math_worker</span>, writing <span class="op">=</span> <span class="va">writing_worker</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>

@@ -34,7 +34,7 @@ to continue or stop:
              (until done or max iterations)
 
 This loop is implemented by
-[`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md)
+[`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
 and runs within a safety cap (`max_iterations`) to prevent runaway LLM
 calls.
 
@@ -109,9 +109,9 @@ agent("analyst", chat = chat_azure_openai(
 ```
 
 All graph types
-([`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md),
-[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/pipeline_graph.md),
-[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/supervisor_graph.md))
+([`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md),
+[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md),
+[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md))
 work identically regardless of which provider backs the agent.
 
 ## Your first agent
@@ -168,7 +168,7 @@ cat(response)
 
 ## Single-agent graph with `react_graph()`
 
-[`react_graph()`](https://ian-flores.github.io/orchestr/reference/react_graph.md)
+[`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
 wraps a single agent in a graph that adds three things a bare agent
 lacks: state management (a typed state object persists across
 iterations), checkpointing (save and resume mid-run), and tracing (pass

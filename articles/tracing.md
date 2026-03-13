@@ -270,7 +270,7 @@ export_trace(exp, tr)
 ### Console export
 
 For interactive debugging, use
-[`console_exporter()`](https://ian-flores.github.io/securetrace/reference/console_exporter.html)
+[`console_exporter()`](https://ian-flores.github.io/securetrace/reference/exporter_console.html)
 to print spans as they complete:
 
 ``` r
