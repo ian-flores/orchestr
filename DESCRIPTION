@@ -1,6 +1,6 @@
 Package: orchestr
 Title: Graph-Based Agent Orchestration
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person("Ian", "Flores Siaca", , "iflores.siaca@hey.com",
            role = c("aut", "cre", "cph"))

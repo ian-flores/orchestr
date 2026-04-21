@@ -1,3 +1,14 @@
+# orchestr 0.2.0
+
+## Documentation
+
+* README and all five vignettes (`quickstart`, `governed-agent`,
+  `multi-agent`, `securer`, `tracing`) now use the canonical
+  `graph_react()` / `graph_pipeline()` / `graph_supervisor()` names
+  instead of the deprecated `react_graph()` / `pipeline_graph()` /
+  `supervisor_graph()` aliases. The aliases themselves are still
+  exported with `lifecycle::deprecate_warn()` until a future release.
+
 # orchestr 0.1.0
 
 * Initial CRAN release.

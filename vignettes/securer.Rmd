@@ -185,7 +185,7 @@ analyst <- agent("analyst",
   secure = TRUE
 )
 
-graph <- react_graph(analyst)
+graph <- graph_react(analyst)
 result <- graph$invoke(list(
   messages = list("What is the standard deviation of c(10, 20, 30, 40, 50)?")
 ))
@@ -193,7 +193,7 @@ result <- graph$invoke(list(
 analyst$close()
 ```
 
-You can also use `pipeline_graph()` and `supervisor_graph()` with secure
+You can also use `graph_pipeline()` and `graph_supervisor()` with secure
 agents. Use `verbose = TRUE` on `compile()` or `$invoke()` to trace
 execution flow:
 
