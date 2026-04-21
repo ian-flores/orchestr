@@ -43,11 +43,11 @@ Suggests:
     testthat (>= 3.0.0),
     withr
 Remotes:
-    ian-flores/securer,
-    ian-flores/securetrace,
-    ian-flores/secureguard,
-    ian-flores/securetools,
-    ian-flores/securecontext,
-    ian-flores/securebench
+    ian-flores/securer@v0.2.0,
+    ian-flores/securetrace@v0.2.1,
+    ian-flores/secureguard@v0.3.0,
+    ian-flores/securetools@v0.2.0,
+    ian-flores/securecontext@v0.2.0,
+    ian-flores/securebench@v0.2.0
 Config/testthat/edition: 3
 VignetteBuilder: knitr
