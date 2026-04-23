@@ -96,7 +96,7 @@ See ellmer’s documentation for all supported providers.
 ### Single Agent (ReAct)
 
 The
-[`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
+[`graph_react()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
 function wraps a single agent with state management and checkpointing.
 ellmer’s `Chat` class handles tool call loops internally – when an agent
 has registered tools, they are executed automatically during `$chat()`.
@@ -109,13 +109,13 @@ library(ellmer)
 analyst <- agent("analyst", chat = chat_anthropic(
   system_prompt = "You analyze data. Use your tools to compute results."
 ))
-graph <- react_graph(analyst, max_iterations = 5)
+graph <- graph_react(analyst, max_iterations = 5)
 result <- graph$invoke(list(messages = list("What is the mean of c(1,2,3,4,5)?")))
 ```
 
 ### Agent Pipeline
 
-[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
+[`graph_pipeline()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
 chains agents in sequence. Each agent processes the state and passes it
 to the next. One LLM call per agent in the pipeline.
 
@@ -128,13 +128,13 @@ editor <- agent("editor", chat = chat_anthropic(
   system_prompt = "Improve the following draft."
 ))
 
-pipeline <- pipeline_graph(drafter, editor)
+pipeline <- graph_pipeline(drafter, editor)
 result <- pipeline$invoke(list(messages = list("Benefits of open source.")))
 ```
 
 ### Supervisor Routing
 
-[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
+[`graph_supervisor()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
 creates a supervisor that routes tasks to specialized workers. The
 supervisor decides which worker to invoke (or to finish) by calling an
 automatically injected `route` tool.
@@ -152,7 +152,7 @@ writing_worker <- agent("writing", chat = chat_anthropic(
   system_prompt = "You are a writing expert. Help with writing tasks."
 ))
 
-graph <- supervisor_graph(
+graph <- graph_supervisor(
   supervisor = supervisor,
   workers = list(math = math_worker, writing = writing_worker),
   max_iterations = 10
@@ -165,11 +165,11 @@ result <- graph$invoke(list(messages = list("Calculate the integral of x^2 from 
 Each node in a graph that calls an LLM makes an API request. Be mindful
 of costs:
 
-- [`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md):
+- [`graph_react()`](https://ian-flores.github.io/orchestr/reference/graph_react.md):
   The agent runs once, with ellmer handling any tool calls internally
-- [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md):
+- [`graph_pipeline()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md):
   One LLM call per agent in the pipeline
-- `supervisor_graph(max_iterations = 50)`: Up to 50+ LLM calls
+- `graph_supervisor(max_iterations = 50)`: Up to 50+ LLM calls
   (supervisor routing + worker execution). Start with low
   `max_iterations` values
 - Use `verbose = TRUE` when compiling graphs to see execution flow:

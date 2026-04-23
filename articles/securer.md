@@ -181,7 +181,7 @@ analyst <- agent("analyst",
   secure = TRUE
 )
 
-graph <- react_graph(analyst)
+graph <- graph_react(analyst)
 result <- graph$invoke(list(
   messages = list("What is the standard deviation of c(10, 20, 30, 40, 50)?")
 ))
@@ -190,9 +190,9 @@ analyst$close()
 ```
 
 You can also use
-[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
+[`graph_pipeline()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
 and
-[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
+[`graph_supervisor()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
 with secure agents. Use `verbose = TRUE` on `compile()` or `$invoke()`
 to trace execution flow:
 

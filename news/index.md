@@ -1,5 +1,26 @@
 # Changelog
 
+## orchestr 0.2.0
+
+### Documentation
+
+- README and all five vignettes (`quickstart`, `governed-agent`,
+  `multi-agent`, `securer`, `tracing`) now use the canonical
+  [`graph_react()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
+  /
+  [`graph_pipeline()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
+  /
+  [`graph_supervisor()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
+  names instead of the deprecated
+  [`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
+  /
+  [`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
+  /
+  [`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
+  aliases. The aliases themselves are still exported with
+  [`lifecycle::deprecate_warn()`](https://lifecycle.r-lib.org/reference/deprecate_soft.html)
+  until a future release.
+
 ## orchestr 0.1.0
 
 - Initial CRAN release.

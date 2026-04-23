@@ -67,12 +67,12 @@ my_agent <- agent(
 ```
 
 The
-[`react_graph()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
+[`graph_react()`](https://ian-flores.github.io/orchestr/reference/graph_react.md)
 convenience function wraps the agent in a ReAct (Reasoning + Acting)
 loop with a safety cap on iterations:
 
 ``` r
-graph <- react_graph(my_agent, max_iterations = 10)
+graph <- graph_react(my_agent, max_iterations = 10)
 
 result <- graph$invoke(list(
   messages = list("What is the mean MPG in the mtcars dataset?")
@@ -107,7 +107,7 @@ analyst <- agent(
     file reader, and data profiler."
 )
 
-graph <- react_graph(analyst)
+graph <- graph_react(analyst)
 
 result <- graph$invoke(list(
   messages = list("Read /data/reports/sales.csv and profile it.")
@@ -254,7 +254,7 @@ secure_analyst <- agent(
   sandbox = TRUE
 )
 
-graph <- react_graph(secure_analyst)
+graph <- graph_react(secure_analyst)
 result <- graph$invoke(list(
   messages = list("Calculate sqrt(144) + log(exp(1))")
 ))
@@ -579,7 +579,7 @@ analyst <- agent(
   sandbox = TRUE
 )
 
-graph <- react_graph(analyst, max_iterations = 10)
+graph <- graph_react(analyst, max_iterations = 10)
 
 # --- 4. RAG knowledge base ---
 corpus <- c(

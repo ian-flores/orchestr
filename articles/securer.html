@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">orchestr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -231,14 +231,14 @@ pipeline or supervisor graph.</p>
 <span>  secure <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_react.html">react_graph</a></span><span class="op">(</span><span class="va">analyst</span><span class="op">)</span></span>
+<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_react.html">graph_react</a></span><span class="op">(</span><span class="va">analyst</span><span class="op">)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">graph</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"What is the standard deviation of c(10, 20, 30, 40, 50)?"</span><span class="op">)</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">analyst</span><span class="op">$</span><span class="fu">close</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>You can also use <code><a href="../reference/graph_pipeline.html">pipeline_graph()</a></code> and
-<code><a href="../reference/graph_supervisor.html">supervisor_graph()</a></code> with secure agents. Use
+<p>You can also use <code><a href="../reference/graph_pipeline.html">graph_pipeline()</a></code> and
+<code><a href="../reference/graph_supervisor.html">graph_supervisor()</a></code> with secure agents. Use
 <code>verbose = TRUE</code> on <code>compile()</code> or
 <code>$invoke()</code> to trace execution flow:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">

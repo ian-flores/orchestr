@@ -54,12 +54,12 @@ The pipeline flow looks like this:
                                         [Final Output]
 
 Use
-[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
+[`graph_pipeline()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
 for a concise setup, or
 [`graph_builder()`](https://ian-flores.github.io/orchestr/reference/graph_builder.md)
 for full control.
 
-### Using `pipeline_graph()`
+### Using `graph_pipeline()`
 
 The simplest way to create a pipeline. Pass agents in order and orchestr
 wires the edges automatically.
@@ -76,7 +76,7 @@ editor <- agent("editor", chat = chat_anthropic(
   system_prompt = "Improve the following draft. Fix grammar and clarity."
 ))
 
-pipeline <- pipeline_graph(drafter, editor)
+pipeline <- graph_pipeline(drafter, editor)
 
 result <- pipeline$invoke(list(
   messages = list("Write about the benefits of open source software.")
@@ -105,7 +105,7 @@ reporter <- agent("reporter", chat = chat_anthropic(
   system_prompt = "Write a clear, non-technical summary of analytical findings."
 ))
 
-graph <- pipeline_graph(profiler, analyst, reporter)
+graph <- graph_pipeline(profiler, analyst, reporter)
 result <- graph$invoke(list(messages = list(
   "Analyze the mtcars dataset focusing on fuel efficiency factors."
 )))
@@ -115,9 +115,9 @@ result <- graph$invoke(list(messages = list(
 
 For conditional edges, cycles, or custom node functions, use the builder
 API.
-[`pipeline_graph()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
+[`graph_pipeline()`](https://ian-flores.github.io/orchestr/reference/graph_pipeline.md)
 and
-[`supervisor_graph()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
+[`graph_supervisor()`](https://ian-flores.github.io/orchestr/reference/graph_supervisor.md)
 use this same API internally. The builder exposes the full graph
 topology: add nodes, wire edges (including conditional edges), and set
 the entry point explicitly.
@@ -189,7 +189,7 @@ writing_worker <- agent("writing", chat = chat_anthropic(
   system_prompt = "You are a writing expert. Help with writing tasks."
 ))
 
-graph <- supervisor_graph(
+graph <- graph_supervisor(
   supervisor = supervisor,
   workers = list(math = math_worker, writing = writing_worker),
   max_iterations = 10
@@ -231,7 +231,7 @@ for building progress indicators in interactive applications, or for
 debugging graph execution by looking at intermediate states.
 
 ``` r
-pipeline <- pipeline_graph(
+pipeline <- graph_pipeline(
   agent("drafter", chat = chat_anthropic(
     system_prompt = "Write a short draft on the given topic."
   )),
@@ -267,7 +267,7 @@ writing_worker <- agent("writing", chat = chat_anthropic(
   system_prompt = "Writing expert."
 ))
 
-graph <- supervisor_graph(
+graph <- graph_supervisor(
   supervisor = supervisor,
   workers = list(math = math_worker, writing = writing_worker)
 )

@@ -72,7 +72,7 @@ analyst <- agent("analyst", chat = chat_anthropic(
   system_prompt = "You are a data analyst."
 ))
 
-graph <- react_graph(analyst)
+graph <- graph_react(analyst)
 
 # Create a trace and pass it to invoke
 tr <- Trace$new("analyst-run", metadata = list(task = "mtcars"))
@@ -114,7 +114,7 @@ reporter <- agent("reporter", chat = chat_anthropic(
   system_prompt = "Write a non-technical summary of analytical findings."
 ))
 
-pipeline <- pipeline_graph(profiler, analyst, reporter)
+pipeline <- graph_pipeline(profiler, analyst, reporter)
 
 tr <- Trace$new("data-pipeline")
 tr$start()
@@ -157,7 +157,7 @@ writing_worker <- agent("writing", chat = chat_anthropic(
   system_prompt = "Help with writing tasks."
 ))
 
-graph <- supervisor_graph(
+graph <- graph_supervisor(
   supervisor = supervisor,
   workers = list(math = math_worker, writing = writing_worker),
   max_iterations = 10

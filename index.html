@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">orchestr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -169,7 +169,7 @@
 <div class="section level3">
 <h3 id="single-agent-react">Single Agent (ReAct)<a class="anchor" aria-label="anchor" href="#single-agent-react"></a>
 </h3>
-<p>The <code><a href="reference/graph_react.html">react_graph()</a></code> function wraps a single agent with state management and checkpointing. ellmer’s <code>Chat</code> class handles tool call loops internally – when an agent has registered tools, they are executed automatically during <code>$chat()</code>. The graph wraps this with state management and checkpointing.</p>
+<p>The <code><a href="reference/graph_react.html">graph_react()</a></code> function wraps a single agent with state management and checkpointing. ellmer’s <code>Chat</code> class handles tool call loops internally – when an agent has registered tools, they are executed automatically during <code>$chat()</code>. The graph wraps this with state management and checkpointing.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ian-flores.github.io/orchestr/">orchestr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ellmer.tidyverse.org" class="external-link">ellmer</a></span><span class="op">)</span></span>
@@ -177,13 +177,13 @@
 <span><span class="va">analyst</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"analyst"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"You analyze data. Use your tools to compute results."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/graph_react.html">react_graph</a></span><span class="op">(</span><span class="va">analyst</span>, max_iterations <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/graph_react.html">graph_react</a></span><span class="op">(</span><span class="va">analyst</span>, max_iterations <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">graph</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"What is the mean of c(1,2,3,4,5)?"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="agent-pipeline">Agent Pipeline<a class="anchor" aria-label="anchor" href="#agent-pipeline"></a>
 </h3>
-<p><code><a href="reference/graph_pipeline.html">pipeline_graph()</a></code> chains agents in sequence. Each agent processes the state and passes it to the next. One LLM call per agent in the pipeline.</p>
+<p><code><a href="reference/graph_pipeline.html">graph_pipeline()</a></code> chains agents in sequence. Each agent processes the state and passes it to the next. One LLM call per agent in the pipeline.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">drafter</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"drafter"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"Write a short draft on the given topic."</span></span>
@@ -193,13 +193,13 @@
 <span>  system_prompt <span class="op">=</span> <span class="st">"Improve the following draft."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">pipeline</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/graph_pipeline.html">pipeline_graph</a></span><span class="op">(</span><span class="va">drafter</span>, <span class="va">editor</span><span class="op">)</span></span>
+<span><span class="va">pipeline</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/graph_pipeline.html">graph_pipeline</a></span><span class="op">(</span><span class="va">drafter</span>, <span class="va">editor</span><span class="op">)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">pipeline</span><span class="op">$</span><span class="fu">invoke</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>messages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Benefits of open source."</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="supervisor-routing">Supervisor Routing<a class="anchor" aria-label="anchor" href="#supervisor-routing"></a>
 </h3>
-<p><code><a href="reference/graph_supervisor.html">supervisor_graph()</a></code> creates a supervisor that routes tasks to specialized workers. The supervisor decides which worker to invoke (or to finish) by calling an automatically injected <code>route</code> tool.</p>
+<p><code><a href="reference/graph_supervisor.html">graph_supervisor()</a></code> creates a supervisor that routes tasks to specialized workers. The supervisor decides which worker to invoke (or to finish) by calling an automatically injected <code>route</code> tool.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">supervisor</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Agent.html">agent</a></span><span class="op">(</span><span class="st">"supervisor"</span>, chat <span class="op">=</span> <span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span></span>
 <span>  system_prompt <span class="op">=</span> <span class="st">"You coordinate workers to solve tasks."</span></span>
@@ -213,7 +213,7 @@
 <span>  system_prompt <span class="op">=</span> <span class="st">"You are a writing expert. Help with writing tasks."</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/graph_supervisor.html">supervisor_graph</a></span><span class="op">(</span></span>
+<span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/graph_supervisor.html">graph_supervisor</a></span><span class="op">(</span></span>
 <span>  supervisor <span class="op">=</span> <span class="va">supervisor</span>,</span>
 <span>  workers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>math <span class="op">=</span> <span class="va">math_worker</span>, writing <span class="op">=</span> <span class="va">writing_worker</span><span class="op">)</span>,</span>
 <span>  max_iterations <span class="op">=</span> <span class="fl">10</span></span>
@@ -227,11 +227,11 @@
 <p>Each node in a graph that calls an LLM makes an API request. Be mindful of costs:</p>
 <ul>
 <li>
-<code><a href="reference/graph_react.html">react_graph()</a></code>: The agent runs once, with ellmer handling any tool calls internally</li>
+<code><a href="reference/graph_react.html">graph_react()</a></code>: The agent runs once, with ellmer handling any tool calls internally</li>
 <li>
-<code><a href="reference/graph_pipeline.html">pipeline_graph()</a></code>: One LLM call per agent in the pipeline</li>
+<code><a href="reference/graph_pipeline.html">graph_pipeline()</a></code>: One LLM call per agent in the pipeline</li>
 <li>
-<code>supervisor_graph(max_iterations = 50)</code>: Up to 50+ LLM calls (supervisor routing + worker execution). Start with low <code>max_iterations</code> values</li>
+<code>graph_supervisor(max_iterations = 50)</code>: Up to 50+ LLM calls (supervisor routing + worker execution). Start with low <code>max_iterations</code> values</li>
 <li>Use <code>verbose = TRUE</code> when compiling graphs to see execution flow: <code>compile(verbose = TRUE)</code>
 </li>
 </ul>
