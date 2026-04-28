@@ -8,3 +8,5 @@
 ^\.github$
 ^vignettes/.*\.html$
 ^\.claude$
+^_pkgdown\.yaml$
+^cran-comments\.md$
