@@ -7,8 +7,7 @@
 [![pkgdown](https://github.com/ian-flores/orchestr/actions/workflows/pkgdown.yaml/badge.svg)](https://ian-flores.github.io/orchestr/)
 <!-- badges: end -->
 
-> [!NOTE]
-> Experimental release. APIs may change before the 1.0 stabilization; track the lifecycle badge above for the current tier.
+> **Note:** Experimental release. APIs may change before the 1.0 stabilization — track the lifecycle badge above for the current tier.
 
 Graph-based multi-agent workflow orchestration for R. Built on
 [ellmer](https://github.com/tidyverse/ellmer) for LLM chat and
@@ -17,7 +16,7 @@ sandboxed code execution.
 
 ## When to use orchestr
 
-Use orchestr when a single ellmer chat isn't enough -- when you need multi-step reasoning (ReAct loops), parallel tool execution, supervisor-routed agent teams, or persistent memory across turns. If your workflow fits in one LLM call, use ellmer directly. If it needs orchestration, use orchestr.
+Use orchestr when a single ellmer chat isn't enough -- when you need multi-step reasoning (ReAct loops), supervisor-routed agent teams, conditional routing, human-in-the-loop interrupts, or persistent memory across turns. If your workflow fits in one LLM call, use ellmer directly. If it needs orchestration, use orchestr.
 
 ## Part of the secure-r-dev Ecosystem
 
