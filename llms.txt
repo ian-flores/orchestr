@@ -1,7 +1,7 @@
 # orchestr
 
-> \[!NOTE\] Experimental release. APIs may change before the 1.0
-> stabilization; track the lifecycle badge above for the current tier.
+> **Note:** Experimental release. APIs may change before the 1.0
+> stabilization — track the lifecycle badge above for the current tier.
 
 Graph-based multi-agent workflow orchestration for R. Built on
 [ellmer](https://github.com/tidyverse/ellmer) for LLM chat and
@@ -11,10 +11,10 @@ sandboxed code execution.
 ## When to use orchestr
 
 Use orchestr when a single ellmer chat isn’t enough – when you need
-multi-step reasoning (ReAct loops), parallel tool execution,
-supervisor-routed agent teams, or persistent memory across turns. If
-your workflow fits in one LLM call, use ellmer directly. If it needs
-orchestration, use orchestr.
+multi-step reasoning (ReAct loops), supervisor-routed agent teams,
+conditional routing, human-in-the-loop interrupts, or persistent memory
+across turns. If your workflow fits in one LLM call, use ellmer
+directly. If it needs orchestration, use orchestr.
 
 ## Part of the secure-r-dev Ecosystem
 
@@ -44,19 +44,20 @@ sits below the tool/guardrail/context layer and above the observability
 and benchmarking layers, coordinating agents that use securer for
 execution, secureguard for safety, and securecontext for memory.
 
-| Package                                                      | Role                                                    |
-|--------------------------------------------------------------|---------------------------------------------------------|
-| [securer](https://github.com/ian-flores/securer)             | Sandboxed R execution with tool-call IPC                |
-| [securetools](https://github.com/ian-flores/securetools)     | Pre-built security-hardened tool definitions            |
-| [secureguard](https://github.com/ian-flores/secureguard)     | Input/code/output guardrails (injection, PII, secrets)  |
-| [orchestr](https://github.com/ian-flores/orchestr)           | Graph-based agent orchestration                         |
-| [securecontext](https://github.com/ian-flores/securecontext) | Document chunking, embeddings, RAG retrieval            |
-| [securetrace](https://github.com/ian-flores/securetrace)     | Structured tracing, token/cost accounting, JSONL export |
-| [securebench](https://github.com/ian-flores/securebench)     | Guardrail benchmarking with precision/recall/F1 metrics |
+| Package | Role |
+|----|----|
+| [securer](https://github.com/ian-flores/securer) | Sandboxed R execution with tool-call IPC |
+| [securetools](https://github.com/ian-flores/securetools) | Pre-built security-hardened tool definitions |
+| [secureguard](https://github.com/ian-flores/secureguard) | Input/code/output guardrails (injection, PII, secrets) |
+| [orchestr](https://github.com/ian-flores/orchestr) | Graph-based agent orchestration |
+| [securecontext](https://github.com/ian-flores/securecontext) | Document chunking, embeddings, RAG retrieval |
+| [securetrace](https://github.com/ian-flores/securetrace) | Structured tracing, token/cost accounting, JSONL export |
+| [securebench](https://github.com/ian-flores/securebench) | Guardrail benchmarking with precision/recall/F1 metrics |
 
 ## Installation
 
 ``` r
+
 # install.packages("pak")
 pak::pak("ian-flores/orchestr")
 ```
@@ -67,6 +68,7 @@ orchestr uses [ellmer](https://github.com/tidyverse/ellmer) for LLM
 access. You’ll need an API key for your chosen provider:
 
 ``` r
+
 # For Anthropic (Claude)
 Sys.setenv(ANTHROPIC_API_KEY = "your-key-here")
 
@@ -100,6 +102,7 @@ has registered tools, they are executed automatically during `$chat()`.
 The graph wraps this with state management and checkpointing.
 
 ``` r
+
 library(orchestr)
 library(ellmer)
 
@@ -117,6 +120,7 @@ chains agents in sequence. Each agent processes the state and passes it
 to the next. One LLM call per agent in the pipeline.
 
 ``` r
+
 drafter <- agent("drafter", chat = chat_anthropic(
   system_prompt = "Write a short draft on the given topic."
 ))
@@ -137,6 +141,7 @@ supervisor decides which worker to invoke (or to finish) by calling an
 automatically injected `route` tool.
 
 ``` r
+
 supervisor <- agent("supervisor", chat = chat_anthropic(
   system_prompt = "You coordinate workers to solve tasks."
 ))

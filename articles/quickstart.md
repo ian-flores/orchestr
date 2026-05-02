@@ -61,6 +61,7 @@ into governed workflows.
 ## Installation
 
 ``` r
+
 install.packages("orchestr")
 ```
 
@@ -70,6 +71,7 @@ orchestr uses [ellmer](https://github.com/tidyverse/ellmer) for LLM
 access. Set your provider’s API key before running any examples:
 
 ``` r
+
 # For Anthropic (Claude)
 Sys.setenv(ANTHROPIC_API_KEY = "your-key-here")
 
@@ -87,6 +89,7 @@ orchestr works with any ellmer chat backend. Pass the appropriate
 and everything works the same regardless of the backing model.
 
 ``` r
+
 library(orchestr)
 library(ellmer)
 
@@ -123,6 +126,7 @@ constructor validates inputs, applies defaults, and returns an R6
 `Agent` instance that manages conversation state and tool registration.
 
 ``` r
+
 library(orchestr)
 library(ellmer)
 
@@ -144,6 +148,7 @@ tool, ellmer executes the function and feeds the result back, so the
 agent can observe real data and adjust its response.
 
 ``` r
+
 summary_tool <- tool(
   function(dataset_name) {
     data <- get(dataset_name, envir = asNamespace("datasets"))
@@ -177,6 +182,7 @@ interface (`$invoke()`, `$stream()`) stays the same whether you run one
 agent or many.
 
 ``` r
+
 analyst <- agent("analyst", chat = chat_anthropic(
   system_prompt = "You are a data analyst. Analyze data and provide insights."
 ))
@@ -191,6 +197,7 @@ Use `verbose = TRUE` when compiling to see execution flow. With the
 convenience functions, pass `verbose` to `$invoke()`:
 
 ``` r
+
 result <- graph$invoke(
   list(messages = list("Describe the distribution of mpg in mtcars.")),
   verbose = TRUE
@@ -206,6 +213,7 @@ less than supervisors because each agent makes exactly one LLM call, and
 the execution order is fixed at graph construction time.
 
 ``` r
+
 profiler <- agent("profiler", chat = chat_anthropic(
   system_prompt = "Profile datasets: describe columns, types, missing values, distributions."
 ))

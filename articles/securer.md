@@ -56,6 +56,7 @@ blocks it.
 ## Installation
 
 ``` r
+
 install.packages(c("securer", "orchestr"))
 ```
 
@@ -68,6 +69,7 @@ You define tools as usual; the sandboxing is transparent to the tool
 implementation.
 
 ``` r
+
 library(orchestr)
 library(ellmer)
 library(securer)
@@ -137,6 +139,7 @@ code stays isolated; trusted code keeps full access to the network and
 filesystem.
 
 ``` r
+
 # Regular tool -- runs in the parent process, no sandbox
 weather_tool <- tool(
   function(city) paste0("Weather in ", city, ": sunny, 22C."),
@@ -173,6 +176,7 @@ unaware of it. You can mix secure and non-secure agents in the same
 pipeline or supervisor graph.
 
 ``` r
+
 analyst <- agent("analyst",
   chat = chat_anthropic(
     system_prompt = "You are a data analyst. Use run_code to compute answers."
@@ -197,6 +201,7 @@ with secure agents. Use `verbose = TRUE` on `compile()` or `$invoke()`
 to trace execution flow:
 
 ``` r
+
 result <- graph$invoke(
   list(messages = list("Compute the correlation between mpg and wt in mtcars.")),
   verbose = TRUE

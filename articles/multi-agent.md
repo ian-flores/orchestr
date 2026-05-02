@@ -65,6 +65,7 @@ The simplest way to create a pipeline. Pass agents in order and orchestr
 wires the edges automatically.
 
 ``` r
+
 library(orchestr)
 library(ellmer)
 
@@ -93,6 +94,7 @@ accumulated conversation history, so the analyst can reference the
 profiler’s output and the reporter can reference both.
 
 ``` r
+
 profiler <- agent("profiler", chat = chat_anthropic(
   system_prompt = "Profile datasets: describe columns, types, missing values, distributions."
 ))
@@ -123,6 +125,7 @@ topology: add nodes, wire edges (including conditional edges), and set
 the entry point explicitly.
 
 ``` r
+
 drafter <- agent("drafter", chat = chat_anthropic(
   system_prompt = "Write a short draft on the given topic."
 ))
@@ -177,6 +180,7 @@ The routing flow looks like this:
                    (back to Supervisor)
 
 ``` r
+
 supervisor <- agent("supervisor", chat = chat_anthropic(
   system_prompt = "You coordinate workers to solve tasks."
 ))
@@ -231,6 +235,7 @@ for building progress indicators in interactive applications, or for
 debugging graph execution by looking at intermediate states.
 
 ``` r
+
 pipeline <- graph_pipeline(
   agent("drafter", chat = chat_anthropic(
     system_prompt = "Write a short draft on the given topic."
@@ -257,6 +262,7 @@ any Mermaid-compatible viewer (GitHub markdown, pkgdown sites, Quarto
 documents, or the Mermaid live editor).
 
 ``` r
+
 supervisor <- agent("supervisor", chat = chat_anthropic(
   system_prompt = "You coordinate workers."
 ))

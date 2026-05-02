@@ -53,6 +53,7 @@ For securetrace fundamentals, see
 ## Installation
 
 ``` r
+
 install.packages(c("orchestr", "securetrace"))
 ```
 
@@ -64,6 +65,7 @@ object. When present, orchestr wraps each node execution in a span named
 `"node:<name>"`:
 
 ``` r
+
 library(orchestr)
 library(ellmer)
 library(securetrace)
@@ -102,6 +104,7 @@ In a pipeline, each agent gets its own span, showing where time and
 tokens are spent across the chain.
 
 ``` r
+
 profiler <- agent("profiler", chat = chat_anthropic(
   system_prompt = "Profile datasets: columns, types, distributions."
 ))
@@ -145,6 +148,7 @@ non-deterministic, the trace is the only reliable record of what
 actually happened.
 
 ``` r
+
 supervisor <- agent("supervisor", chat = chat_anthropic(
   system_prompt = "You coordinate workers to solve tasks."
 ))
@@ -191,6 +195,7 @@ tracing: progress updates for interactive applications, and
 observability data for later analysis.
 
 ``` r
+
 tr <- Trace$new("streamed-pipeline")
 tr$start()
 
@@ -223,6 +228,7 @@ iterations and 3 workers could make 20+ LLM calls in a single
 invocation, so per-span cost visibility matters.
 
 ``` r
+
 tr <- Trace$new("cost-tracking")
 tr$start()
 
@@ -251,6 +257,7 @@ is a self-contained JSON object representing one span, so it is
 straightforward to process with standard tools (jq, pandas, data.table).
 
 ``` r
+
 exp <- jsonl_exporter("agent-traces.jsonl")
 
 tr <- Trace$new("export-demo")
@@ -274,6 +281,7 @@ For interactive debugging, use
 to print spans as they complete:
 
 ``` r
+
 exp <- console_exporter(verbose = TRUE)
 
 tr <- Trace$new("debug-run")
@@ -309,6 +317,7 @@ for configuration guides covering:
 Here is a minimal OTLP example:
 
 ``` r
+
 exp <- otlp_exporter(
   endpoint = "http://localhost:4318",
   service_name = "r-agent-pipeline"
@@ -335,6 +344,7 @@ failed, how long it ran before failing, and what error message was
 produced.
 
 ``` r
+
 tr <- Trace$new("error-demo")
 tr$start()
 

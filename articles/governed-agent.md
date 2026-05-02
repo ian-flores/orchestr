@@ -50,6 +50,7 @@ constructor binds together an ellmer `Chat` object, a system prompt, and
 a tool registry into a single entity that the graph runtime can execute.
 
 ``` r
+
 library(orchestr)
 library(ellmer)
 
@@ -72,6 +73,7 @@ convenience function wraps the agent in a ReAct (Reasoning + Acting)
 loop with a safety cap on iterations:
 
 ``` r
+
 graph <- graph_react(my_agent, max_iterations = 10)
 
 result <- graph$invoke(list(
@@ -91,6 +93,7 @@ with path validation, rate limiting, and AST-based expression
 whitelisting.
 
 ``` r
+
 library(securetools)
 
 tools <- list(
@@ -129,6 +132,7 @@ responses before they reach the user. All three compose into a
 [`secure_pipeline()`](https://ian-flores.github.io/secureguard/reference/secure_pipeline.html).
 
 ``` r
+
 library(secureguard)
 
 # Input guardrails: block prompt injection and PII in prompts
@@ -160,6 +164,7 @@ pipeline <- secure_pipeline(
 The pipeline exposes three check methods:
 
 ``` r
+
 # Check user input before sending to the LLM
 input_result <- pipeline$check_input("Analyze the sales data")
 input_result$pass
@@ -178,6 +183,7 @@ injection_result$reasons
 Check code before execution, and output before returning to the user:
 
 ``` r
+
 # Check generated code
 code_result <- pipeline$check_code("mean(mtcars$mpg)")
 code_result$pass
@@ -209,6 +215,7 @@ secureguard’s code guardrails via
 [`as_pre_execute_hook()`](https://ian-flores.github.io/secureguard/reference/as_pre_execute_hook.html):
 
 ``` r
+
 library(securer)
 
 # Convert code guardrails into a pre-execute hook
@@ -246,6 +253,7 @@ constructor supports `secure = TRUE` to automatically wrap tool
 execution in a SecureSession:
 
 ``` r
+
 secure_analyst <- agent(
   name = "secure-analyst",
   chat = chat_anthropic(model = "claude-sonnet-4-5"),
@@ -274,6 +282,7 @@ into orchestr as agent memory. All retrieval runs locally; no data
 leaves the R process.
 
 ``` r
+
 library(securecontext)
 
 # Build a TF-IDF embedder from a domain corpus
@@ -313,6 +322,7 @@ results
 Build token-limited context for the LLM:
 
 ``` r
+
 ctx <- context_for_chat(ret, "revenue performance", max_tokens = 500, k = 3)
 ctx$context
 #> Q4 revenue was $28.5M, up 15% YoY.
@@ -322,6 +332,7 @@ ctx$context
 Wire the knowledge store as orchestr memory:
 
 ``` r
+
 ks <- knowledge_store$new()
 ks$set("q4_revenue", "$28.5M", metadata = list(year = 2025))
 ks$set("churn_rate", "2.1%", metadata = list(quarter = "Q4"))
@@ -344,6 +355,7 @@ multiple export backends. Pass a `Trace` to `graph$invoke()` to
 instrument every node:
 
 ``` r
+
 library(securetrace)
 
 # Create a trace for the agent run
@@ -375,6 +387,7 @@ and
 for fine-grained instrumentation:
 
 ``` r
+
 result <- with_trace("full-pipeline", {
 
   # Span for guardrail check
@@ -401,6 +414,7 @@ for time-series metrics. For cloud-native exporter configuration, see
 [`vignette("cloud-native", package = "securetrace")`](https://ian-flores.github.io/securetrace/articles/cloud-native.html).
 
 ``` r
+
 # JSONL for local audit
 jsonl_exp <- jsonl_exporter("traces.jsonl")
 export_trace(jsonl_exp, tr)
@@ -434,6 +448,7 @@ accuracy with precision, recall, and F1 metrics so you can quantify this
 tradeoff before deploying to production.
 
 ``` r
+
 library(securebench)
 
 # Quick benchmark with positive (should block) and negative (should pass) cases
@@ -469,6 +484,7 @@ For finer-grained evaluation, use
 with labeled datasets:
 
 ``` r
+
 eval_data <- data.frame(
   input = c(
     "Summarize the dataset",
@@ -506,6 +522,7 @@ guardrail_confusion(eval_result)
 Compare two guardrail versions to measure improvement:
 
 ``` r
+
 v1_result <- guardrail_eval(
   function(text) !grepl("ignore", text, ignore.case = TRUE),
   eval_data
@@ -534,6 +551,7 @@ Below is the complete governed agent combining all seven layers. Each
 numbered section corresponds to a governance layer introduced above.
 
 ``` r
+
 library(orchestr)
 library(ellmer)
 library(securetools)
